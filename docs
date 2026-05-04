@@ -1,0 +1,74 @@
+Business Requirements Document (BRD)
+Proyecto: Activa360 – Sistema Inteligente de Gestión de Activos Fijos
+1. Resumen Ejecutivo
+Activa360 es una solución tecnológica orientada a transformar la gestión de activos fijos en instituciones públicas, abordando la brecha existente entre los registros contables y la realidad física de los bienes.
+El sistema propone una gestión inteligente basada en trazabilidad en tiempo real, movilidad y automatización, permitiendo eliminar los denominados “activos fantasmas” y mejorar significativamente la eficiencia operativa, el control institucional y la toma de decisiones.
+Inicialmente concebido para su implementación en la Universidad Mayor de San Simón (UMSS), Activa360 tiene el potencial de escalar como una solución GovTech para otras instituciones públicas.
+2. Problema y Oportunidad de Negocio
+Problema
+    • Desconexión entre inventario físico y registros digitales
+    • Procesos manuales propensos a errores
+    • Falta de trazabilidad en tiempo real
+    • Riesgos en auditorías por incumplimiento normativo
+    • Interfaces complejas y poco intuitivas
+Oportunidad
+    • Digitalización del control patrimonial
+    • Automatización del cumplimiento normativo (SABS)
+    • Reducción de pérdidas de activos
+    • Mejora en la toma de decisiones mediante datos en tiempo real
+3. Usuarios Objetivo
+    • Jefe de Activos Fijos
+    • Subjefes de Activos
+    • Inventariadores
+    • Funcionarios y docentes (custodios de activos)
+    • Autoridades institucionales (MAE)
+    • Entidades reguladoras
+4. Propuesta de Valor
+    • Eliminación de activos fantasmas
+    • Gestión de activos en tiempo real desde campo
+    • Trazabilidad completa de activos (ubicación, responsable, historial)
+5. Métricas Clave de Éxito
+    • % de coincidencia entre inventario físico y sistema
+    • Reducción de tiempo en inventarios
+    • Disminución de errores en registros
+    • Tiempo de localización de activos
+    • Nivel de adopción del sistema por usuarios
+6. Panorama Competitivo
+Sistemas actuales:
+    • VSIAF / SIAF
+    • SAF WEB
+Limitaciones:
+    • Alta dependencia de procesos manuales
+    • Interfaces complejas
+    • Falta de movilidad
+    • Reportes estáticos
+Diferenciación de Activa360:
+    • Uso de tecnología QR
+    • Aplicación móvil con modo offline
+    • Dashboards inteligentes
+    • Automatización normativa
+7. Business Model Canvas
+
+
+
+8. Supuestos, Riesgos y Restricciones
+Supuestos
+    • Disponibilidad de datos institucionales
+    • Acceso a dispositivos móviles
+    • Apoyo institucional
+Riesgos
+    • Resistencia al cambio
+    • Falta de capacitación
+    • Problemas de integración con sistemas existentes
+Restricciones
+    • Cumplimiento de normativa SABS
+    • Limitaciones presupuestarias
+    • Infraestructura tecnológica existente
+9. Dependencias
+    • Integración con sistemas contables
+    • Disponibilidad de infraestructura TIC
+    • Validación normativa
+    • Capacitación de usuarios
+10. Conclusión
+Activa360 representa una oportunidad estratégica para transformar la gestión de activos fijos, pasando de un enfoque reactivo y manual a un modelo inteligente, automatizado y basado en datos.
+Su implementación permitirá mejorar la eficiencia operativa, reducir riesgos institucionales y sentar las bases para una solución escalable en el sector público.
