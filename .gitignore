@@ -1,0 +1,5 @@
+pptx_env/
+.*.swp
+.~lock.*
+*.log
+__pycache__/
