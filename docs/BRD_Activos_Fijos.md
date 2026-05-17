@@ -230,12 +230,12 @@ Nota: este resumen se complementa con la sección de competencia del MRD (`docs/
 
 | Tipo | Año 1 | Año 2 | Año 3 |
 | :---- | :---- | :---- | :---- |
-| Ahorro operativo (reducción pérdidas + tiempo) | $ 15,000 | $ 18,000 | $ 20,000 |
-| Ingresos adicionales | $ 0 | $ 0 | $ 0 |
-| Inversión (CAPEX) | $ 12,000 | $ 0 | $ 2,000 |
-| Costo operación (OPEX) | $ 2,500 | $ 2,500 | $ 2,500 |
-| **Flujo de caja neto** | $ 500 | $ 15,500 | $ 15,500 |
-| **VAN (tasa 10%)** | **$ 23,290** | | |
+| Ahorro operativo (reducción pérdidas + tiempo) | Bs. 105,000 | Bs. 126,000 | Bs. 140,000 |
+| Ingresos adicionales | Bs. 0 | Bs. 0 | Bs. 0 |
+| Inversión (CAPEX) | Bs. 84,000 | Bs. 0 | Bs. 14,000 |
+| Costo operación (OPEX) | Bs. 17,500 | Bs. 17,500 | Bs. 17,500 |
+| **Flujo de caja neto** | Bs. 3,500 | Bs. 108,500 | Bs. 108,500 |
+| **VAN (tasa 10%)** | **Bs. 163,030** | | |
 | **TIR** | **52%** | | |
 
 *Nota: Valores estimados basados en la recuperación de activos fantasmas y un ahorro considerable en horas-hombre durante la toma de inventarios institucionales.*
