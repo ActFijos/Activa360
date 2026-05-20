@@ -1,0 +1,60 @@
+C4Container
+  title FTGO Platform – Diagrama de Contenedores (Nivel 2)
+  
+  Person(consumer, "Consumidor", "Usuario final que ordena comida")
+  Person(restaurant, "Restaurante", "Operador de cocina del local")
+  Person(courier, "Courier", "Repartidor de comida")
+  
+  System_Ext(stripe, "Stripe", "Pasarela de pagos externa")
+  System_Ext(maps, "Google Maps", "Servicios de geocodificación y rutas")
+  System_Ext(monolith, "Monolito Legacy WAR", "Sistema original que atiende temporalmente Delivery y Backoffice")
+
+  System_Boundary(ftgo, "FTGO Platform") {
+    Container(mobile_app, "Mobile App", "React Native / Expo", "Aplicación nativa móvil para consumidores y couriers.")
+    Container(web_portal, "Web Portal", "React / TypeScript", "Consola web de gestión para restaurantes y soporte de FTGO.")
+    Container(api_gateway, "API Gateway", "Spring Cloud Gateway / Java", "Punto de entrada único. Gestiona la autenticación JWT y enruta el tráfico dinámico.")
+    
+    Container(order_svc, "Order Service", "Java 17 / Spring Boot", "Orquesta la toma de pedidos, cotizaciones y estados del carrito. Publica eventos de creación de órdenes.")
+    ContainerDb(order_db, "Order Database", "PostgreSQL 15", "Almacena el agregado de pedidos y estados de las transacciones de compra.")
+    
+    Container(billing_svc, "Billing Service", "Java 17 / Spring Boot", "Gestiona la facturación, cobros con tarjeta, dispersión de fondos y reembolsos asíncronos.")
+    ContainerDb(billing_db, "Billing Database", "PostgreSQL 15", "Almacena auditorías de facturación, logs de Stripe y estados de pagos.")
+    
+    Container(kitchen_svc, "Kitchen Service", "Java 17 / Spring Boot", "Gestiona tickets de cocina del restaurante, preparación de comida y menús de cocina.")
+    ContainerDb(kitchen_db, "Kitchen Database", "PostgreSQL 15", "Almacena los tickets y el estado de preparación de platos en cocina.")
+    
+    ContainerQueue(kafka, "Event Broker", "Apache Kafka", "Bus de eventos distribuido para sincronización de estados asíncronos y Sagas transaccionales.")
+  }
+
+  %% Relaciones de actores al punto de entrada
+  Rel(consumer, mobile_app, "Usa para ordenar y rastrear comida", "iOS/Android")
+  Rel(courier, mobile_app, "Usa para aceptar ofertas de viajes y reportar GPS", "iOS/Android")
+  Rel(restaurant, web_portal, "Usa para operar la cocina y gestionar platos", "HTTPS")
+  
+  %% Relaciones de aplicaciones al API Gateway
+  Rel(mobile_app, api_gateway, "Envía solicitudes HTTP", "HTTPS / JSON")
+  Rel(web_portal, api_gateway, "Envía solicitudes HTTP", "HTTPS / JSON")
+  
+  %% Enrutamiento del API Gateway a los Microservicios y al Monolito Legacy
+  Rel(api_gateway, order_svc, "Rutea comandos de creación de órdenes", "gRPC / HTTP REST")
+  Rel(api_gateway, kitchen_svc, "Rutea consultas de menús y tickets", "gRPC / HTTP REST")
+  Rel(api_gateway, monolith, "Enruta consultas a módulos legacy (Delivery y perfiles)", "HTTPS / REST")
+  
+  %% Conexión de servicios a sus bases de datos independientes (Database-per-Service)
+  Rel(order_svc, order_db, "Lee/Escribe", "JDBC / SSL")
+  Rel(billing_svc, billing_db, "Lee/Escribe", "JDBC / SSL")
+  Rel(kitchen_svc, kitchen_db, "Lee/Escribe", "JDBC / SSL")
+  
+  %% Comunicación Asíncrona Orientada a Eventos a través de Kafka (Mutaciones / Saga)
+  Rel(order_svc, kafka, "Publica eventos 'OrderCreated' / 'OrderCancelled'", "Kafka TCP Protocol")
+  Rel(billing_svc, kafka, "Publica eventos 'OrderPaid' / 'PaymentFailed'", "Kafka TCP Protocol")
+  Rel(kitchen_svc, kafka, "Publica eventos 'OrderAccepted' / 'OrderRejected'", "Kafka TCP Protocol")
+  
+  Rel(kafka, order_svc, "Escucha confirmación de cobro y cocina para actualizar Sagas", "Kafka TCP Protocol")
+  Rel(kafka, billing_svc, "Escucha 'OrderCreated' para disparar el cargo", "Kafka TCP Protocol")
+  Rel(kafka, kitchen_svc, "Escucha 'OrderPaid' para crear el ticket de cocina", "Kafka TCP Protocol")
+  
+  %% Conexiones a Sistemas Externos de Terceros
+  Rel(billing_svc, stripe, "Procesa transacciones de cobros y retornos", "HTTPS / REST API JSON")
+  Rel(order_svc, maps, "Consulta cálculo de distancias y georutas", "HTTPS / REST API JSON")
+  Rel(monolith, kafka, "Sincroniza y escucha eventos para mantener consistencia legacy", "Kafka TCP Protocol")

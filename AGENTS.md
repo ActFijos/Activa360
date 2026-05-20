@@ -18,6 +18,10 @@ Los agentes están restringidos por los siguientes "skills" documentados y regla
 | Regla de Backend | `.cursor/rules/activa360.mdc` | Obliga a usar Arquitectura Hexagonal y validar contratos Gherkin. |
 | Diagramas C4 | `docs/skills/c4.md` | Estándares para dibujar diagramas Mermaid Nivel 1 a 3. |
 | DTI Author | `docs/skills/dti-author.md` | Reglas de frontmatter y validación cruzada para redactar el DTI. |
+| POC Runner | `docs/skills/poc-runner.md` | Bootstrapea y ejecuta Pruebas de Concepto (POCs) time-boxed y reproducibles. |
+| Caso de Uso Backend | `docs/skills/activa360_backend_skill.md` | Automatiza la implementación de casos de uso NestJS en arquitectura hexagonal. |
+| Auditor de Seguridad | `docs/skills/endpoint_security_auditor.md` | Audita controladores y DTOs de NestJS bajo directivas de seguridad. |
+
 
 ## 3. Criterios de Intervención Humana (HIL - Human-In-The-Loop)
 

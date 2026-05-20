@@ -1,0 +1,24 @@
+C4Context
+  title FTGO Platform – Diagrama de Contexto de Sistema (Nivel 1)
+  
+  Person(consumer, "Consumidor", "Usuario final que busca y ordena comida a domicilio a través del canal web o móvil.")
+  Person(restaurant, "Restaurante", "Socio comercial que prepara platos y gestiona sus tickets a través de su panel web.")
+  Person(courier, "Courier", "Repartidor independiente que recibe ofertas de entrega y reporta GPS en tiempo real.")
+  Person(backoffice, "Empleado FTGO", "Personal interno de soporte y finanzas que administra la plataforma y resuelve disputas.")
+  
+  System(ftgo, "FTGO Platform", "Ecosistema de software que gestiona la toma de pedidos, asignación de couriers y pagos.")
+  
+  System_Ext(stripe, "Stripe", "Pasarela de pago de terceros utilizada para realizar cobros con tarjeta y dispersar fondos.")
+  System_Ext(maps, "Google Maps", "Servicio externo utilizado para geocodificación, cálculo de rutas óptimas y distancias.")
+  System_Ext(notifications, "SendGrid / Twilio", "Plataformas de comunicación externa para despachar correos electrónicos y mensajes SMS.")
+  System_Ext(monolith, "Monolito Legacy WAR", "Aplicación original que corre en producción y coexiste mediante Strangler Fig.")
+  
+  Rel(consumer, ftgo, "Busca restaurantes, crea pedidos y hace tracking", "HTTPS")
+  Rel(restaurant, ftgo, "Gestiona disponibilidad de menús y acepta tickets de cocina", "HTTPS")
+  Rel(courier, ftgo, "Marca disponibilidad, acepta viajes y reporta GPS", "HTTPS")
+  Rel(backoffice, ftgo, "Monitorea transacciones y resuelve incidencias operativas", "HTTPS")
+  
+  Rel(ftgo, stripe, "Procesa transacciones de cobro y reembolsos asíncronos", "HTTPS / JSON API")
+  Rel(ftgo, maps, "Consulta mapas, geocodificación y cálculo de ETA", "HTTPS / REST API")
+  Rel(ftgo, notifications, "Solicita despacho de notificaciones SMS y de emails operacionales", "HTTPS / SMTP")
+  Rel(ftgo, monolith, "Delega y sincroniza datos de servicios aún no migrados (Delivery, etc.)", "HTTPS / REST API")
