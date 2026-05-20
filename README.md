@@ -14,13 +14,13 @@ El repositorio está organizado conforme a las directivas del módulo, garantiza
 
 ```bash
 ├── README.md                                 # Este documento raíz con instrucciones de ejecución y métricas
-├── AGENTS.md                                 # Topología de agentes autorizados y mapa de 5 skills activos
 ├── prompts_mejorados/
 │   ├── prd_mejorado.md                       # Prompt B.1 (PRD) optimizado con Changelog y métricas
 │   └── fsd_mejorado.md                       # Prompt B.2 (FSD) optimizado con Changelog y métricas
 └── docs/
-    ├── PRD.md                                # Product Requirement Document de FTGO (NFRs trazables al brief)
-    ├── FSD.md                                # Functional Specification Document (5 UCs con escenarios BDD)
+    ├── BRD_FTGO.md                           # Business Requirements Document (Sponsor, BMC, RACI)
+    ├── PRD_FTGO.md                           # Product Requirement Document de FTGO (NFRs trazables al brief)
+    ├── FSD_FTGO.md                           # Functional Specification Document (5 UCs con escenarios BDD)
     ├── adr/
     │   ├── 0001-estilo-arquitectonico.md     # ADR-0001: Migración incremental mediante Strangler Fig
     │   └── 0002-estrategia-ipc-comunicacion.md # ADR-0002: Modelo híbrido de comunicación (REST + Kafka)
@@ -39,7 +39,7 @@ Para cumplir con el **criterio D4 de la rúbrica**, se han seleccionado y mejora
 *   **Comando de Invocación (Gemini CLI / Claude Code):**
     ```bash
     # Para ejecutar en consola mediante Claude Code
-    claude --read prompts_mejorados/prd_mejorado.md "Genera el documento PRD.md para el caso FTGO de acuerdo a las directivas del prompt" > docs/PRD.md
+    claude --read prompts_mejorados/prd_mejorado.md "Genera el documento PRD_FTGO.md para el caso FTGO de acuerdo a las directivas del prompt" > docs/PRD_FTGO.md
     ```
 *   **Descripción:** Rellena los 4 huecos TODO del semilla, incorporando de forma explícita los 5 stakeholders del brief, las 7 capacidades estables de Richardson Cap 2, límites numéricos estrictos en la condición de parada y un esqueleto formal con citas de trazabilidad `[Brief §A.4]`. Además, incorpora un bloque de **Anti-patrones** para evitar el sobrediseño técnico.
 
@@ -47,7 +47,7 @@ Para cumplir con el **criterio D4 de la rúbrica**, se han seleccionado y mejora
 *   **Comando de Invocación (Gemini CLI / Claude Code):**
     ```bash
     # Para ejecutar en consola mediante Claude Code
-    claude --read prompts_mejorados/fsd_mejorado.md "Genera el documento FSD.md con 5 casos de uso de BDD estructurados" > docs/FSD.md
+    claude --read prompts_mejorados/fsd_mejorado.md "Genera el documento FSD_FTGO.md con 5 casos de uso de BDD estructurados" > docs/FSD_FTGO.md
     ```
 *   **Descripción:** Rellena los 4 huecos TODO del semilla, mapeando exactamente los 5 Casos de Uso obligatorios (3 de historias semilla y 2 derivados), definiendo una **Regla de Granularidad** precisa para no confundir flujos alternativos con nuevos UCs y aplicando una sección nueva de **Verification** (DoD) que prohíbe placeholders de texto en escenarios Given/When/Then.
 

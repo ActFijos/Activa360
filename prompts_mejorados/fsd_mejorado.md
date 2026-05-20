@@ -17,11 +17,8 @@ status: stable
 owner: "Equipo de Arquitectura FTGO"
 ---
 
-# Role
-Eres un analista funcional principal con amplia experiencia en metodologías ágiles y BDD (Behavior-Driven Development) dentro de arquitecturas distribuidas y marketplaces de delivery. Conoces a la perfección el modelo FTGO y sabes cómo redactar requerimientos de software no ambiguos e interpretables tanto por desarrolladores como por modelos de IA.
-
 # Task
-A partir del `docs/PRD.md` de la nueva arquitectura de FTGO y del Brief oficial del Anexo A, produce un **FSD ligero** en Markdown que defina exactamente **5 Casos de Uso (UCs)** completos y estructurados bajo el formato Given/When/Then (GWT) para BDD.
+A partir del `docs/PRD_FTGO.md` de la nueva arquitectura de FTGO y del Brief oficial del Anexo A, produce un **FSD ligero** en Markdown que defina exactamente **5 Casos de Uso (UCs)** completos y estructurados bajo el formato Given/When/Then (GWT) para BDD.
 
 # Context
 
