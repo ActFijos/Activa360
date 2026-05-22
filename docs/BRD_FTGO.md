@@ -9,12 +9,12 @@
 | Campo | Valor |
 | :---- | :---- |
 | Producto | FTGO – Marketplace Inteligente de Entrega de Comida a Domicilio |
-| Grupo | Grupo Activa360 ( Arnold Copa ) |
+| Grupo | Grupo Activa360 ( Guillermo Daza ) |
 | Versión | v0.1 |
 | Fecha | 20/05/2026 |
 | Sponsor de negocio | Lic. Armando Ríos (Máxima Autoridad Ejecutiva - MAE FTGO) |
 | Stakeholders | Consumidores, Restaurantes Socios, Couriers (Repartidores), Empleados de Soporte FTGO, Entidades Reguladoras de Pagos |
-| Autores | Arnold Copa |
+| Autores | Guillermo Daza |
 | Revisores | Docente + 1 grupo par |
 | Estado | Listo para revisión |
 | Insumo de Referencia | Anexo A: Brief de FTGO & Capítulos 1-3 de Microservices Patterns |
@@ -248,7 +248,7 @@ El sistema actual es ineficiente y no escala debido a las siguientes deficiencia
 | Rol | Nombre | Firma | Fecha |
 | :---- | :---- | :---- | :---- |
 | Sponsor | Lic. Armando Ríos | *Aprobado digitalmente* | 20/05/2026 |
-| PM | Arnold Copa | *Firmado* | 20/05/2026 |
+| PM | Guillermo Daza | *Firmado* | 20/05/2026 |
 | Arquitecto | Equipo Activa360 | *Firmado* | 20/05/2026 |
 
 ---
@@ -257,4 +257,4 @@ El sistema actual es ineficiente y no escala debido a las siguientes deficiencia
 
 | Versión | Fecha | Autor | Cambio |
 | :---- | :---- | :---- | :---- |
-| v0.1 | 20/05/2026 | Arnold Copa | Versión inicial del BRD para el caso de estudio de FTGO. |
+| v0.1 | 20/05/2026 | Guillermo Daza | Versión inicial del BRD para el caso de estudio de FTGO. |

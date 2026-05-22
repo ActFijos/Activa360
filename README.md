@@ -2,7 +2,7 @@
 
 Este repositorio contiene los entregables del Examen Práctico Individual correspondientes al **Módulo 4 (AI-SDLC)** para el rediseño y migración incremental del sistema de **FTGO (Food To Go)** desde un monolito Java WAR hacia una arquitectura de microservicios robusta y escalable.
 
-* **Maestrante:** Arnold Copa
+* **Maestrante:** Guillermo Daza
 * **Rama de Entrega:** `release/exam-lab`
 * **Caso de Estudio:** FTGO (Richardson, 2019)
 
