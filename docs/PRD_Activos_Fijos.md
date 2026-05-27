@@ -11,17 +11,17 @@ Audiencia: Product, Diseño (UX/UI), Ingeniería, QA.
 | Campo | Valor |
 | :---- | :---- |
 | Producto | Activa360 – Sistema Inteligente de Gestión de Activos Fijos |
-| Grupo | `<identificador del grupo>` |
-| Versión | v0.1 |
-| Fecha | `<dd/mm/aaaa>` |
-| Product Manager / Autor | `<…>` |
+| Grupo | Grupo 3 (Activos Fijos) |
+| Versión | v1.0.0 |
+| Fecha | 27/05/2026 |
+| Product Manager / Autor | Equipo de Producto Grupo 3 |
 | Revisores | Docente + Tech Lead + QA |
-| Estado | Borrador |
-| BRD de referencia | BRD_Activos_Fijos.md v0.1 |
-| MRD de referencia | `<MRD v…>` |
+| Estado | Final |
+| BRD de referencia | BRD_Activos_Fijos.md v1.0.0 |
+| MRD de referencia | MRD_Activos_Fijos.md v1.0.0 |
 | Insumos M2 (UI/UX) | M2. Consigna de Trabajo Final Activa360ult.pdf, M1 Bitácora |
-| Fase Spec Kit cubierta | Specify ✅ / Plan ⬜ / Tasks ⬜ / Implement ⬜ |
-| Prompts utilizados | `<vacío si no se usó IA>` |
+| Fase Spec Kit cubierta | Specify ✅ / Plan ✅ / Tasks ✅ / Implement ✅ |
+| Prompts utilizados | docs/PROMPT_MAPPING.md |
 
 ## 0.1 Constitution (opcional — Spec Kit)
 
@@ -82,10 +82,10 @@ Cada objetivo enlaza a un objetivo de negocio (BRD).
 
 | Versión | Contenido | Fecha objetivo |
 | :---- | :---- | :---- |
-| v0.5 | Prototipo funcional - Registro y QR | `<…>` |
-| v1.0 | MVP - Core features (QR, inventario offline, dashboard) | `<…>` |
-| v1.1 | Bajas SABS, historial, reportes | `<…>` |
-| v2.0 | Integración contable, expansiones | `<…>` |
+| v0.5 | Prototipo funcional - Registro y QR | 15/06/2026 |
+| v1.0 | MVP - Core features (QR, inventario offline, dashboard) | 15/07/2026 |
+| v1.1 | Bajas SABS, historial, reportes | 15/08/2026 |
+| v2.0 | Integración contable, expansiones | 15/09/2026 |
 
 ### 3.4 Roadmap de validación (Discovery track)
 
@@ -379,9 +379,9 @@ Hallazgos clave de investigación M2 organizados por categoría:
 | :---- | :---- | :---- | :---- |
 | PRD-US-001 | BR-001 | MRD-N-01 | FSD-UC-001 |
 | PRD-US-005 | BR-002 | MRD-N-02 | FSD-UC-002 |
-| PRD-US-009 | BR-003 | MRD-N-03 | FSD-UC-003 |
-| PRD-US-016 | BR-006 | MRD-N-04 | FSD-UC-004 |
-| PRD-US-018 | BR-008 | MRD-N-05 | FSD-UC-005 |
+| PRD-US-009 | BR-007 | MRD-N-03 | FSD-UC-001 |
+| PRD-US-016 | BR-006 | MRD-N-04 | FSD-UC-003 |
+| PRD-US-018 | BR-008 | MRD-N-05 | FSD-UC-008 |
 
 ## 15. Anexos
 
@@ -393,7 +393,8 @@ Hallazgos clave de investigación M2 organizados por categoría:
 
 | Versión | Fecha | Autor | Cambio |
 | :---- | :---- | :---- | :---- |
-| v0.1 | `<dd/mm/aaaa>` | `<autor>` | Versión inicial basada en template PRD + insumos M1/M2 |
+| v0.1 | 14/05/2026 | Grupo 3 | Versión inicial basada en template PRD + insumos M1/M2 |
+| v1.0.0 | 27/05/2026 | Grupo 3 | Versión final pulida y alineada para la Defensa Final |
 
 ---
 

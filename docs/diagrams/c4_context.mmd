@@ -1,0 +1,16 @@
+%% Diagrama de Contexto C4 - Activa360
+C4Context
+  title Diagrama de Contexto – Activa360
+
+  Person(inventariador, "Inventariador", "Realiza conteo en campo")
+  Person(jefe, "Jefe de Activos", "Gestiona y audita")
+  
+  System(activa360, "Activa360", "Sistema Inteligente de Gestión de Activos Fijos")
+  
+  System_Ext(vsiaf, "VSIAF / SIAF", "Sistema Contable Institucional")
+  System_Ext(sso, "SSO UMSS", "Directorio Activo Institucional")
+
+  Rel(inventariador, activa360, "Inventaría activos (App Móvil)")
+  Rel(jefe, activa360, "Genera QR, aprueba bajas, ve reportes (Web)")
+  Rel(activa360, vsiaf, "Sincroniza registros contables")
+  Rel(activa360, sso, "Autentica usuarios")

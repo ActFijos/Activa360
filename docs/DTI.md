@@ -1,9 +1,9 @@
 ---
 producto: "Activa360 – Sistema Inteligente de Gestión de Activos Fijos"
-grupo: "<identificador del grupo>"
-version: v0.1
-fecha: "14/05/2026"
-status: borrador
+grupo: "Grupo 3 (Activos Fijos)"
+version: v1.0.0
+fecha: "27/05/2026"
+status: final
 audiencia: dual
 stack:
   - "React Native (App Móvil Offline-first)"
@@ -11,11 +11,11 @@ stack:
   - "PostgreSQL (Base de datos principal)"
   - "Redis (Caché y colas)"
   - "SQLite / WatermelonDB (Base de datos local móvil)"
-repo: ""
+repo: "https://github.com/ActFijos/Activa360"
 agents_md: "/AGENTS.md"
 artefactos_relacionados:
   brd: "docs/BRD_Activos_Fijos.md"
-  mrd: "docs/MRD_TEMPLATE.md"
+  mrd: "docs/MRD_Activos_Fijos.md"
   prd: "docs/PRD_Activos_Fijos.md"
   fsd: "docs/FSD_Activos_Fijos.md"
   prompt_mapping: "docs/PROMPT_MAPPING.md"
@@ -26,7 +26,7 @@ adrs_vigentes:
 skills_aplicados:
   - "docs/skills/c4.md"
   - "docs/skills/dti-author.md"
-release_objetivo: "release/1.0.1"
+release_objetivo: "release/2.0.0"
 ---
 
 # Documento Técnico Inicial del Producto (DTI) – Activa360
@@ -36,19 +36,19 @@ release_objetivo: "release/1.0.1"
 | Campo | Valor |
 | :---- | :---- |
 | Producto | Activa360 – Sistema Inteligente de Gestión de Activos Fijos |
-| Grupo | `<identificador del grupo>` |
-| Versión | `v0.1` |
-| Fecha | `14/05/2026` |
-| Arquitecto responsable | `<…>` |
-| Stakeholders | Jefe de Activos Fijos, Inventariadores, MAE |
-| Estado | Borrador |
-| Repositorio | `<url>` |
-| Enlace al BRD | `docs/BRD_Activos_Fijos.md` |
-| Enlace al MRD | `docs/MRD_TEMPLATE.md` |
-| Enlace al PRD | `docs/PRD_Activos_Fijos.md` |
-| Enlace al FSD | `docs/FSD_Activos_Fijos.md` |
-| Enlace a `AGENTS.md` | `/AGENTS.md` |
-| Enlace a `PROMPT_MAPPING.md` | `docs/PROMPT_MAPPING.md` |
+| Grupo | Grupo 3 (Activos Fijos) |
+| Versión | `v1.0.0` |
+| Fecha | `27/05/2026` |
+| Arquitecto responsable | Equipo de Arquitectura Activa360 |
+| Stakeholders | Jefe de Activos Fijos, Inventariadores, MAE (UMSS) |
+| Estado | Final |
+| Repositorio | [Activa360 Repo](https://github.com/ActFijos/Activa360) |
+| Enlace al BRD | [BRD Activos Fijos](file:///home/personal/docs/BRD_Activos_Fijos.md) |
+| Enlace al MRD | [MRD Activos Fijos](file:///home/personal/docs/MRD_Activos_Fijos.md) |
+| Enlace al PRD | [PRD Activos Fijos](file:///home/personal/docs/PRD_Activos_Fijos.md) |
+| Enlace al FSD | [FSD Activos Fijos](file:///home/personal/docs/FSD_Activos_Fijos.md) |
+| Enlace a `AGENTS.md` | [AGENTS.md](file:///home/personal/AGENTS.md) |
+| Enlace a `PROMPT_MAPPING.md` | [PROMPT_MAPPING.md](file:///home/personal/docs/PROMPT_MAPPING.md) |
 
 ### 0.1 Rol de agentes IA en el SDLC `[máquina]`
 
@@ -209,7 +209,7 @@ sequenceDiagram
 | `SyncRestController` | `SyncInventoryUseCase` | NestJS HTTP | `adapters/in/web` |
 | `PostgresAssetRepository`| `AssetRepositoryPort` | TypeORM / Postgres | `adapters/out/persistence` |
 
-## 6. Arquitectura Distribuida (si aplica) `[humano+máquina]`
+## 6. Arquitectura Distribuida `[humano+máquina]`
 
 ### 6.1 Microservicios y responsabilidades
 
@@ -250,7 +250,7 @@ Para alinear las restricciones institucionales de la UMSS (que exigen un desplie
 
 ## 10. Estrategia de *Prompt Mapping* `[máquina]`
 
-Vive en `docs/PROMPT_MAPPING.md`. (Refiere a los prompts utilizados durante el desarrollo por los agentes IA en SDLC).
+Vive en [PROMPT_MAPPING.md](file:///home/personal/docs/PROMPT_MAPPING.md). (Refiere a los prompts utilizados durante el desarrollo por los agentes IA en SDLC).
 
 ## 11. NFRs Consolidados (espejo de FSD §10) `[máquina]`
 

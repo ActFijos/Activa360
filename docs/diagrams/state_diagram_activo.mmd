@@ -1,0 +1,10 @@
+%% Diagrama de Estado del Activo (Ciclo de Vida) - Activa360
+stateDiagram-v2
+    [*] --> Nuevo: Ingreso al Sistema
+    Nuevo --> Asignado: Asignación a Custodio
+    Asignado --> En_Traspaso: Cambio de Custodio
+    En_Traspaso --> Asignado: Aceptado
+    Asignado --> Dañado: Reporte de Inventariador
+    Dañado --> En_Proceso_Baja: Solicitud Jefatura
+    En_Proceso_Baja --> Dado_De_Baja: Aprobación MAE
+    Dado_De_Baja --> [*]: Archivo

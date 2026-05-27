@@ -11,13 +11,13 @@ Complementa al BRD (visión interna del negocio) y antecede al PRD (qué debe ha
 | Campo | Valor |
 | :---- | :---- |
 | Producto | Activa360 – Sistema Inteligente de Gestión de Activos Fijos |
-| Grupo | <identificador del grupo> |
-| Versión | v0.1 |
-| Fecha | 14/05/2026 |
+| Grupo | Grupo 3 (Activos Fijos) |
+| Versión | v1.0.0 |
+| Fecha | 27/05/2026 |
 | Product Manager / Autor | Equipo Activa360 |
 | Revisores | Docente + stakeholders |
 | Estado | Aprobado |
-| Relación con BRD | BRD_Activos_Fijos.md v0.1 |
+| Relación con BRD | BRD_Activos_Fijos.md v1.0.0 |
 
 ## 1. Resumen ejecutivo
 
@@ -193,8 +193,8 @@ Para las **entidades gubernamentales bolivianas**, que sufren de **discrepancias
 | MRD ID | BRD ID | PRD ID |
 | :---- | :---- | :---- |
 | MRD-N-01 | BR-001 | PRD-REQ-001 |
-| MRD-N-02 | BR-004 | PRD-REQ-002 |
-| MRD-N-03 | BR-003 | PRD-REQ-003 |
+| MRD-N-02 | BR-002 | PRD-REQ-002 |
+| MRD-N-03 | BR-007 | PRD-REQ-003 |
 | MRD-N-04 | BR-006 | PRD-REQ-006 |
 | MRD-N-05 | BR-008 | PRD-REQ-008 |
 

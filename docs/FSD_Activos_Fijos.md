@@ -5,16 +5,16 @@
 | Campo | Valor |
 | :---- | :---- |
 | Producto | Activa360 – Sistema Inteligente de Gestión de Activos Fijos |
-| Grupo | <identificador del grupo> |
-| Versión del documento | v0.2 |
-| Fecha | 14/05/2026 |
+| Grupo | Grupo 3 (Activos Fijos) |
+| Versión del documento | v1.0.0 |
+| Fecha | 27/05/2026 |
 | Autores | Equipo Activa360 |
 | Revisores | Docente + 1 grupo par |
 | Estado | Aprobado |
 | **Modo elegido** | **FSD clásico 🔧** |
-| Trazabilidad a PRD | PRD_Activos_Fijos.md v0.1 |
+| Trazabilidad a PRD | PRD_Activos_Fijos.md v1.0.0 |
 | Insumos M2 (UI/UX) | M2. Consigna de Trabajo Final Activa360ult.pdf |
-| Fase Spec Kit cubierta | Specify ✅ / Plan ✅ / Tasks ✅ / Implement ⬜ |
+| Fase Spec Kit cubierta | Specify ✅ / Plan ✅ / Tasks ✅ / Implement ✅ |
 | Prompts utilizados | PR-FSD-001 al PR-FSD-010 |
 
 ## 1. Resumen ejecutivo ⚡🔧
@@ -280,10 +280,11 @@ stateDiagram-v2
 
 | MRD | PRD | FSD (Caso de Uso) | NFR asociado |
 | :---- | :---- | :---- | :---- |
-| MRD-01 | PRD-REQ-01 | FSD-UC-001 | NFR-004 |
-| MRD-02 | PRD-REQ-02 | FSD-UC-002 | NFR-002 |
-| MRD-04 | PRD-REQ-06 | FSD-UC-003 | NFR-003 |
-| MRD-05 | PRD-REQ-08 | FSD-UC-008 | NFR-001 |
+| MRD-N-01 | PRD-REQ-001 | FSD-UC-001 | NFR-004 |
+| MRD-N-02 | PRD-REQ-002 | FSD-UC-002 | NFR-002 |
+| MRD-N-03 | PRD-REQ-003 | FSD-UC-001 | NFR-001 |
+| MRD-N-04 | PRD-REQ-006 | FSD-UC-003 | NFR-003 |
+| MRD-N-05 | PRD-REQ-008 | FSD-UC-008 | NFR-001 |
 
 ## 10. Registro de cambios
 - **v0.2**: Expansión masiva (10 UCs, 8 NFRs, 10 Prompts, Diagramas de Estado) para cumplir rúbrica de excelencia.

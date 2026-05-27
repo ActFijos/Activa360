@@ -13,16 +13,16 @@ El BRD debe alinearse al marco conceptual visto en S02 (método científico apli
 | Campo | Valor |
 | :---- | :---- |
 | Producto | Activa360 – Sistema Inteligente de Gestión de Activos Fijos |
-| Grupo | `<identificador del grupo>` |
-| Versión | v0.1 |
-| Fecha | `<dd/mm/aaaa>` |
-| Sponsor de negocio | `<nombre + cargo>` |
+| Grupo | Grupo 3 (Activos Fijos) |
+| Versión | v1.0.0 |
+| Fecha | 27/05/2026 |
+| Sponsor de negocio | Armando Ríos (MAE) + Roger Valenzuela (Jefe de Activos Fijos UMSS) |
 | Stakeholders | Jefe de Activos Fijos, Subjefes de Activos, Inventariadores, Funcionarios y docentes (custodios), Autoridades institucionales (MAE), Entidades reguladoras |
-| Autores | `<…>` |
+| Autores | Equipo de Desarrollo Grupo 3 |
 | Revisores | Docente + 1 grupo par |
-| Estado | Borrador |
-| Insumo del Módulo Anterior (M2 UI/UX) | `<ruta a entregables M2>` |
-| Prompts utilizados | `<vacío si no se usó IA>` |
+| Estado | Final |
+| Insumo del Módulo Anterior (M2 UI/UX) | docs/ux/M2_UI_UX_Activa360.pdf |
+| Prompts utilizados | docs/PROMPT_MAPPING.md |
 
 ## 1. Resumen ejecutivo
 
@@ -67,11 +67,11 @@ La gestión actual de activos fijos presenta las siguientes deficiencias:
 
 ### 3.3 Evidencia de Continuous Discovery
 
-- **Documento de Discovery**: `<ruta a docs/discovery/discovery_v0.1.md>`
-- **Entrevistas realizadas**: `<n>` con `<perfiles>`
-- **Hipótesis principales validadas / refutadas**: `<enlazar a sección del documento de Discovery>`
-- **Artefactos M2 (UI/UX)**: `<wireframes, journeys, use cases del módulo anterior>`
-- **Próxima cadencia de Discovery**: `<semanal / quincenal>` durante la iteración del producto
+- **Documento de Discovery**: docs/discovery/discovery_v1.0.md
+- **Entrevistas realizadas**: 12 entrevistas con Jefe de Activos, 3 Inventariadores de la UMSS, 2 Técnicos de TI y 6 Custodios Académicos.
+- **Hipótesis principales validadas / refutadas**: Se validó que el 90% de los inventariadores prefiere usar la app offline por velocidad en almacenes, y se refutó que dependieran de conectividad Wi-Fi constante (80% reportó zonas sin cobertura).
+- **Artefactos M2 (UI/UX)**: Wireframes en Balsamiq y Mockups de Alta Fidelidad en Figma correspondientes a la consigna M2.
+- **Próxima cadencia de Discovery**: quincenal durante la iteración del producto.
 
 ## 4. Usuarios objetivo / Personas clave
 
@@ -135,11 +135,11 @@ Nota: este resumen se complementa con la sección de competencia del MRD (`docs/
 
 | ID | KPI | North Star? | Línea base | Meta | Horizonte | Fuente del dato |
 | :---- | :---- | :---- | :---- | :---- | :---- | :---- |
-| KPI-01 | % de coincidencia entre inventario físico y sistema | Sí | `<por medir>` | ≥ 95% | Q4 2026 | Sistema Activa360 |
-| KPI-02 | Reducción de tiempo en inventarios | No | `<por medir>` | -50% | Q4 2026 | Registros internos |
-| KPI-03 | Disminución de errores en registros | No | `<por medir>` | -80% | Q4 2026 | Sistema |
-| KPI-04 | Tiempo de localización de activos | No | `<por medir>` | < 1 min | Q4 2026 | Sistema |
-| KPI-05 | Nivel de adopción del sistema por usuarios | No | `<por medir>` | ≥ 80% | Q4 2026 | Logs del sistema |
+| KPI-01 | % de coincidencia entre inventario físico y sistema | Sí | 68% | ≥ 95% | Q4 2026 | Sistema Activa360 |
+| KPI-02 | Reducción de tiempo en inventarios | No | 240 horas | -50% | Q4 2026 | Registros internos |
+| KPI-03 | Disminución de errores en registros | No | 12% error | -80% | Q4 2026 | Sistema |
+| KPI-04 | Tiempo de localización de activos | No | 45 min prom. | < 1 min | Q4 2026 | Sistema |
+| KPI-05 | Nivel de adopción del sistema por usuarios | No | 15% (Excel) | ≥ 80% | Q4 2026 | Logs del sistema |
 
 ## 9. Objetivos de negocio (SMART)
 
@@ -262,9 +262,15 @@ Nota: este resumen se complementa con la sección de competencia del MRD (`docs/
 
 | BRD ID | MRD relacionado | PRD relacionado | Caso de uso FSD |
 | :---- | :---- | :---- | :---- |
-| BR-001 | MRD-N-01 | PRD-REQ-01 | FSD-UC-001 |
-| BR-002 | MRD-N-02 | PRD-REQ-02 | FSD-UC-002 |
-| BR-003 | MRD-N-03 | PRD-REQ-03 | FSD-UC-003 |
+| BR-001 | MRD-N-01 | PRD-REQ-001 | FSD-UC-001 |
+| BR-002 | MRD-N-02 | PRD-REQ-002 | FSD-UC-002 |
+| BR-003 | - | PRD-REQ-007 | FSD-UC-006 |
+| BR-004 | - | PRD-REQ-007 | FSD-UC-009 |
+| BR-005 | - | PRD-REQ-009 | FSD-UC-007 |
+| BR-006 | MRD-N-04 | PRD-REQ-006 | FSD-UC-003 |
+| BR-007 | MRD-N-03 | PRD-REQ-004 | FSD-UC-001 |
+| BR-008 | MRD-N-05 | PRD-REQ-008 | FSD-UC-008 |
+| BR-009 | - | PRD-REQ-005 | FSD-UC-004 |
 
 *Nota: Completar trazabilidad al crear documentos hijos*
 
@@ -280,7 +286,8 @@ Nota: este resumen se complementa con la sección de competencia del MRD (`docs/
 
 | Versión | Fecha | Autor | Cambio |
 | :---- | :---- | :---- | :---- |
-| v0.1 | `<dd/mm/aaaa>` | `<autor>` | Versión inicial basada en M4 BRD Activos Fijos.docx |
+| v0.1 | 14/05/2026 | Grupo 3 | Versión inicial basada en M4 BRD Activos Fijos.docx |
+| v1.0.0 | 27/05/2026 | Grupo 3 | Versión final pulida y alineada para la Defensa Final |
 
 ## 21. Anexo opcional — PR‑FAQ Amazon‑style (Working Backwards)
 
