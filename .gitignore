@@ -3,3 +3,28 @@ pptx_env/
 .~lock.*
 *.log
 __pycache__/
+
+# Node.js dependencies and builds
+node_modules/
+dist/
+*.tsbuildinfo
+.eslintcache
+
+# Java / Maven builds
+target/
+*.class
+.java/
+.mvn/
+
+# IDE configurations
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+
+# Environments
+.env
+.env.local
+.env.*.local
