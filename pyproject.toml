@@ -1,0 +1,8 @@
+[project]
+name = "bpmn-fixed-assets-workflow"
+version = "0.1.0"
+description = "Motor BPMN para registro de activos fijos"
+requires-python = ">=3.12"
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
