@@ -1,6 +1,6 @@
 ---
 
-name: dti-author description: \> Puebla secciones del Documento Técnico Inicial (`docs/DTI.md`) siguiendo `plantillas/DOCUMENTO_TECNICO_INICIAL_TEMPLATE.md`. Mantiene sincronía atómica ADR ↔ DTI ↔ `AGENTS.md` (un cambio significativo viaja en un único commit). Activar cuando el usuario edita `docs/DTI.md` o pide explícitamente "poblar §N del DTI" / "actualizar AGENTS.md desde el DTI". allowed-tools:
+name: dti-author description: \> Puebla secciones del Documento Técnico Inicial (`docs/dti/DTI_vFinal.md`) siguiendo `plantillas/DOCUMENTO_TECNICO_INICIAL_TEMPLATE.md`. Mantiene sincronía atómica ADR ↔ DTI ↔ `AGENTS.md` (un cambio significativo viaja en un único commit). Activar cuando el usuario edita `docs/dti/DTI_vFinal.md` o pide explícitamente "poblar §N del DTI" / "actualizar AGENTS.md desde el DTI". allowed-tools:
 
 - read  
 - edit model-tier: sonnet fsd-version-min: v0.1 status: stable owner: docente / grupo
@@ -13,8 +13,8 @@ name: dti-author description: \> Puebla secciones del Documento Técnico Inicial
 
 ## 1\. Cuándo activarlo (triggers)
 
-- DURANTE: edición de `docs/DTI.md` o de un ADR en `docs/adr/`.  
-- ARRANCA cuando: el usuario invoca `"@dti-author §N <tema>"` o abre `docs/DTI.md`.  
+- DURANTE: edición de `docs/dti/DTI_vFinal.md` o de un ADR en `docs/adr/`.  
+- ARRANCA cuando: el usuario invoca `"@dti-author §N <tema>"` o abre `docs/dti/DTI_vFinal.md`.  
 - NO ACTIVAR cuando: el usuario está definiendo capacidades de producto (PRD) o requerimientos (FSD); este skill asume que el FSD ya existe.
 
 ## 2\. Entradas obligatorias (Inputs)

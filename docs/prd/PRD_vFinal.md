@@ -17,8 +17,8 @@ Audiencia: Product, Diseño (UX/UI), Ingeniería, QA.
 | Product Manager / Autor | Equipo de Producto Grupo 3 |
 | Revisores | Docente + Tech Lead + QA |
 | Estado | Final |
-| BRD de referencia | BRD_Activos_Fijos.md v1.0.0 |
-| MRD de referencia | MRD_Activos_Fijos.md v1.0.0 |
+| BRD de referencia | BRD_vFinal.md v1.0.0 |
+| MRD de referencia | MRD_vFinal.md v1.0.0 |
 | Insumos M2 (UI/UX) | M2. Consigna de Trabajo Final Activa360ult.pdf, M1 Bitácora |
 | Fase Spec Kit cubierta | Specify ✅ / Plan ✅ / Tasks ✅ / Implement ✅ |
 | Prompts utilizados | docs/PROMPT_MAPPING.md |

@@ -12,7 +12,7 @@
 | Revisores | Docente + 1 grupo par |
 | Estado | Aprobado |
 | **Modo elegido** | **FSD clásico 🔧** |
-| Trazabilidad a PRD | PRD_Activos_Fijos.md v1.0.0 |
+| Trazabilidad a PRD | PRD_vFinal.md v1.0.0 |
 | Insumos M2 (UI/UX) | M2. Consigna de Trabajo Final Activa360ult.pdf |
 | Fase Spec Kit cubierta | Specify ✅ / Plan ✅ / Tasks ✅ / Implement ✅ |
 | Prompts utilizados | PR-FSD-001 al PR-FSD-010 |

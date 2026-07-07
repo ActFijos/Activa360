@@ -17,7 +17,7 @@ Complementa al BRD (visión interna del negocio) y antecede al PRD (qué debe ha
 | Product Manager / Autor | Equipo Activa360 |
 | Revisores | Docente + stakeholders |
 | Estado | Aprobado |
-| Relación con BRD | BRD_Activos_Fijos.md v1.0.0 |
+| Relación con BRD | BRD_vFinal.md v1.0.0 |
 
 ## 1. Resumen ejecutivo
 

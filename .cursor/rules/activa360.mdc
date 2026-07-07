@@ -9,10 +9,10 @@ globs: src/**/*.ts
 
 ## Entradas obligatorias
 - El ID del caso de uso (ej. `FSD-UC-001`).
-- Acceso de lectura al archivo `docs/FSD_Activos_Fijos.md`.
+- Acceso de lectura al archivo `docs/fsd/FSD_vFinal.md`.
 
 ## Procedimiento
-1. **Verificar**: Lee el FSD_Activos_Fijos.md, localiza el ID del caso de uso, el prompt-contrato y las reglas de negocio.
+1. **Verificar**: Lee el FSD_vFinal.md, localiza el ID del caso de uso, el prompt-contrato y las reglas de negocio.
 2. **Mapear Arquitectura**: Todo el código debe ir a la estructura hexagonal (ej. `src/modules/inventory/adapters/in/web`).
 3. **Implementar**: Escribe el código. NO inventes columnas que no estén en el diccionario de datos. NO inventes pasos del flujo que no estén en el FSD.
 4. **Testing**: Escribe un archivo `.spec.ts` de Jest que cubra obligatoriamente los Criterios de Aceptación Gherkin definidos en el FSD.
@@ -29,3 +29,4 @@ globs: src/**/*.ts
 - Mezclar llamadas a la base de datos (TypeORM/Prisma) dentro del Controller. Toda validación de negocio debe vivir en un Servicio (UseCase).
 - Ignorar el manejo de fechas para la sincronización offline.
 - Hardcodear contraseñas, URLs de base de datos.
+- **Acoplamiento entre módulos**: Prohibido que la capa `domain` de un módulo importe código de la capa `adapters` de otro. La comunicación entre módulos distintos debe hacerse únicamente a través de eventos (NestJS EventEmitter) o puertos públicos expuestos, nunca inyectando repositorios de base de datos directamente entre módulos.

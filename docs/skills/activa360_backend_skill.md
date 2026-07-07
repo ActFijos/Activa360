@@ -2,7 +2,7 @@
 name: implement-activa360-backend-uc
 description: >
   Implementa un Caso de Uso (FSD-UC-XXX) para el backend del Sistema Inteligente de Gestión de Activos Fijos (Activa360). 
-  Entrada: ID del Caso de Uso del FSD_Activos_Fijos.md. 
+  Entrada: ID del Caso de Uso del docs/fsd/FSD_vFinal.md. 
   Salida: Código NestJS estructurado en arquitectura hexagonal (Controller, UseCase, Repository) y tests unitarios básicos (Jest).
 allowed-tools:
   - read
@@ -24,17 +24,17 @@ owner: "Equipo Activa360"
 ## 2. Entradas obligatorias (Inputs)
 Para ejecutar esta tarea, el usuario DEBE proporcionar:
 - El ID del caso de uso (ej. `FSD-UC-001`).
-- Acceso de lectura al archivo `docs/FSD_Activos_Fijos.md`.
-Si no se provee, responde: *"Por favor, indícame qué FSD-UC-XXX del documento FSD_Activos_Fijos.md deseas implementar."*
+- Acceso de lectura al archivo `docs/fsd/FSD_vFinal.md`.
+Si no se provee, responde: *"Por favor, indícame qué FSD-UC-XXX del documento FSD_vFinal.md deseas implementar."*
 
 ## 3. Fuentes de verdad (orden de precedencia)
-1. Fragmento específico del caso de uso en `docs/FSD_Activos_Fijos.md` (Flujo principal, Excepciones, Criterios Gherkin).
+1. Fragmento específico del caso de uso en `docs/fsd/FSD_vFinal.md` (Flujo principal, Excepciones, Criterios Gherkin).
 2. Reglas de Negocio aplicables de la tabla §5 (ej. `BR-001`, `BR-002`).
 3. Diccionario de Datos en la sección §6.2 del FSD.
-4. El Documento Técnico Inicial (`DOCUMENTO_TECNICO_INICIAL_Activos_Fijos.md`) para respetar el stack: **NestJS, PostgreSQL, Hexagonal Architecture**.
+4. El Documento Técnico Inicial (`docs/dti/DTI_vFinal.md`) para respetar el stack: **NestJS, PostgreSQL, Hexagonal Architecture**.
 
 ## 4. Procedimiento
-1. **Verificar**: Lee el FSD_Activos_Fijos.md, localiza el ID del caso de uso, el prompt-contrato (sección §7) y las reglas de negocio asociadas.
+1. **Verificar**: Lee el FSD_vFinal.md, localiza el ID del caso de uso, el prompt-contrato (sección §7) y las reglas de negocio asociadas.
 2. **Resumir**: Lista en 3 viñetas qué vas a crear (ej. Puerto de entrada, Adaptador REST, Puerto de salida, Entidad de Dominio).
 3. **Mapear Arquitectura**: Todo el código debe ir a la estructura hexagonal (ej. `src/modules/inventory/adapters/in/web`, `src/modules/inventory/domain/ports/out`).
 4. **Implementar**: Escribe el código. NO inventes columnas que no estén en el diccionario de datos. NO inventes pasos del flujo que no estén en el FSD.

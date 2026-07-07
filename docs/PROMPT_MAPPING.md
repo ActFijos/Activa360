@@ -6,10 +6,10 @@
 
 | Artefacto / Documento | Origen | Herramienta / Modelo |
 | :--- | :--- | :--- |
-| `docs/BRD_Activos_Fijos.md` | Mixto | Humano + Claude 3.5 Sonnet |
-| `docs/PRD_Activos_Fijos.md` | Mixto | Humano + Claude 3.5 Sonnet |
-| `docs/FSD_Activos_Fijos.md` | Mixto | Humano + Claude 3.5 Sonnet |
-| `docs/dti/DOCUMENTO_TECNICO_INICIAL_Activos_Fijos.md` | IA (Generación) | Claude 3.5 Sonnet |
+| `docs/brd/BRD_vFinal.md` | Mixto | Humano + Claude 3.5 Sonnet |
+| `docs/prd/PRD_vFinal.md` | Mixto | Humano + Claude 3.5 Sonnet |
+| `docs/fsd/FSD_vFinal.md` | Mixto | Humano + Claude 3.5 Sonnet |
+| `docs/dti/DTI_vFinal.md` | IA (Generación) | Claude 3.5 Sonnet |
 | Código Backend (Ej. `sync.controller.ts`) | IA (Asistido) | Cursor / Claude 3.5 Sonnet |
 
 ## 2. Trazabilidad: Requerimiento → Prompt → Artefacto
@@ -45,7 +45,7 @@ Eres un Desarrollador Backend Senior experto en NestJS y Arquitectura Hexagonal.
 Implementar el controlador REST (Adaptador de entrada) para procesar un evento de escaneo de código QR proveniente de la app móvil.
 
 #### 1.3 Context
-- **Documento fuente**: `docs/FSD_Activos_Fijos.md` (Sección FSD-UC-001)
+- **Documento fuente**: `docs/fsd/FSD_vFinal.md` (Sección FSD-UC-001)
 - **Entradas esperadas**: JSON Payload con `codigo_qr`, `estado_fisico`, `lat_long`, `timestamp`.
 - **Restricciones de dominio**: BR-001 (Todo activo debe existir previamente en la base de datos).
 - **Restricciones técnicas**: Usar TypeScript estricto, NestJS, retornar respuestas HTTP adecuadas.

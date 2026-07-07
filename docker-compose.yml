@@ -1,0 +1,65 @@
+version: '3.8'
+
+services:
+  # Base de Datos PostgreSQL
+  postgres:
+    image: postgres:15-alpine
+    container_name: activa360-postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: activa360
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: adminpassword
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  # Caché y Colas Redis
+  redis:
+    image: redis:7-alpine
+    container_name: activa360-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+  # Servidor de Autenticación Keycloak
+  keycloak:
+    image: quay.io/keycloak/keycloak:22.0.1
+    container_name: activa360-keycloak
+    command: start-dev
+    ports:
+      - "8080:8080"
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: adminpassword
+      KC_DB: postgres
+      KC_DB_URL_HOST: postgres
+      KC_DB_URL_DATABASE: activa360
+      KC_DB_USERNAME: admin
+      KC_DB_PASSWORD: adminpassword
+      KC_FEATURES: token-exchange
+    depends_on:
+      - postgres
+
+  # Almacenamiento de Objetos RustFS (S3 Compatible)
+  rustfs:
+    image: rustfs/rustfs:latest
+    container_name: activa360-rustfs
+    ports:
+      - "9000:9000" # Puerto API S3
+      - "9001:9001" # Puerto Consola Web
+    environment:
+      RUSTFS_ACCESS_KEY: minioadmin
+      RUSTFS_SECRET_KEY: minioadminpassword
+      RUSTFS_ADDRESS: 0.0.0.0:9000
+      RUSTFS_CONSOLE_ENABLE: "true"
+      RUSTFS_CONSOLE_ADDRESS: 0.0.0.0:9001
+      RUSTFS_VOLUMES: /data
+    volumes:
+      - rustfs_data:/data
+
+volumes:
+  postgres_data:
+  redis_data:
+  rustfs_data:
