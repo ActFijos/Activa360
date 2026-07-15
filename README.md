@@ -48,3 +48,7 @@ La interfaz web estará disponible en http://127.0.0.1:5000.
 2. Registrar un activo fijo desde la ruta /register.
 3. Revisar la bandeja de tareas, la trazabilidad y los artefactos generados.
 
+## Aportes y Contribuciones
+
+El detalle de la contribución individual y porcentajes de aporte se encuentra en [APORTES.md](APORTES.md).
+

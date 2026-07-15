@@ -4,6 +4,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from enum import Enum
 from typing import Any, Optional
+from src.runtime.executor import Future
 
 
 class WorkflowStatus(Enum):
@@ -135,8 +136,24 @@ class LogicGate:
         if not self.depends_on:
             return True
         if self.type == GateType.AND:
+            for task in self.depends_on:
+                if task.id in ctx.active_futures:
+                    try:
+                        ctx.active_futures[task.id].result()
+                    except Exception:
+                        pass
+            completed_tasks = set(ctx.variables.get("completed_tasks", []))
             return all(task.id in completed_tasks for task in self.depends_on)
         if self.type == GateType.OR:
+            if any(task.id in completed_tasks for task in self.depends_on):
+                return True
+            import time
+            while not any(task.id in ctx.variables.get("completed_tasks", []) for task in self.depends_on):
+                active = [ctx.active_futures[task.id] for task in self.depends_on if task.id in ctx.active_futures]
+                if not active:
+                    break
+                time.sleep(0.01)
+            completed_tasks = set(ctx.variables.get("completed_tasks", []))
             return any(task.id in completed_tasks for task in self.depends_on)
         if self.type == GateType.XOR:
             return sum(1 for task in self.depends_on if task.id in completed_tasks) == 1
@@ -256,3 +273,4 @@ class WorkflowInstance:
     task_instances: dict[str, TaskInstance] = field(default_factory=dict)
     variables: dict[str, Any] = field(default_factory=dict)
     asset: Optional["FixedAsset"] = None
+    active_futures: dict[str, Future] = field(default_factory=dict)
