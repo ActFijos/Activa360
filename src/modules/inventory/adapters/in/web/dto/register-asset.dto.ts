@@ -1,17 +1,20 @@
-import { IsNotEmpty, IsString, IsEnum, IsInt, IsNumber, Min, IsOptional } from 'class-validator';
+import { IsNotEmpty, IsString, IsInt, IsNumber, Min, IsOptional, Matches, IsDateString, IsIn } from 'class-validator';
 import { AssetStatus } from '../../../../domain/models/asset.model.js';
 
 export class RegisterAssetDto {
   @IsString()
   @IsNotEmpty()
+  @Matches(/^(ACT|QR)-[a-zA-Z0-9-]+$/, {
+    message: 'El código QR debe comenzar con "ACT-" o "QR-" seguido de caracteres alfanuméricos y guiones (ej. ACT-2026-001 o QR-123)',
+  })
   qrCode: string;
 
   @IsString()
   @IsNotEmpty()
   name: string;
 
-  @IsEnum(AssetStatus, {
-    message: 'El estado debe ser Nuevo, Asignado, En_Traspaso, Dañado, Obsoleto, En_Proceso_Baja, o Dado_De_Baja',
+  @IsIn([AssetStatus.NUEVO, AssetStatus.ASIGNADO], {
+    message: 'El estado inicial del activo debe ser Nuevo o Asignado.',
   })
   @IsNotEmpty()
   status: string;
@@ -25,7 +28,7 @@ export class RegisterAssetDto {
   category: string;
 
   @IsInt()
-  @Min(0)
+  @Min(1, { message: 'La vida útil debe ser al menos de 1 año' })
   @IsOptional()
   usefulLife?: number;
 
@@ -33,16 +36,16 @@ export class RegisterAssetDto {
   @IsNotEmpty()
   origin: string;
 
-  @IsString()
+  @IsDateString({}, { message: 'La fecha de compra debe tener un formato de fecha válido (ISO 8601)' })
   @IsNotEmpty()
   purchaseDate: string;
 
-  @IsString()
+  @IsDateString({}, { message: 'La fecha de ingreso debe tener un formato de fecha válido (ISO 8601)' })
   @IsNotEmpty()
   entryDate: string;
 
   @IsNumber()
-  @Min(0)
+  @Min(0.01, { message: 'El valor de compra debe ser un número positivo mayor que cero' })
   @IsNotEmpty()
   purchaseValue: number;
 
@@ -63,3 +66,4 @@ export class RegisterAssetDto {
   @IsOptional()
   providerPhone?: string;
 }
+

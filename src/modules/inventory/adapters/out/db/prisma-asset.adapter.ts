@@ -79,4 +79,20 @@ export class PrismaAssetAdapter implements AssetRepositoryPort {
     });
     return records.map((record) => this.mapRecordToDomain(record));
   }
+
+  async saveMaintenanceReport(report: {
+    assetId: string;
+    diagnosis: string;
+    estimatedCost: number;
+    action: string;
+  }): Promise<void> {
+    await this.prisma.maintenanceReport.create({
+      data: {
+        assetId: report.assetId,
+        diagnosis: report.diagnosis,
+        estimatedCost: report.estimatedCost,
+        action: report.action,
+      },
+    });
+  }
 }

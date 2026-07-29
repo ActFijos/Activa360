@@ -13,6 +13,8 @@ import {
 import { RegisterAssetUseCase } from '../../../domain/ports/in/register-asset.use-case.js';
 import { AssetRepositoryPort } from '../../../domain/ports/out/asset-repository.port.js';
 import { RegisterAssetDto } from './dto/register-asset.dto.js';
+import { SubmitInspectionDto } from './dto/submit-inspection.dto.js';
+import { AssetStatus } from '../../../domain/models/asset.model.js';
 
 @Controller('activos')
 export class RegisterAssetController {
@@ -55,5 +57,37 @@ export class RegisterAssetController {
       throw new NotFoundException(`Activo con código QR ${qrCode} no encontrado.`);
     }
     return asset;
+  }
+
+  @Post(':id/inspeccionar')
+  @HttpCode(HttpStatus.OK)
+  @UsePipes(new ValidationPipe({ whitelist: true }))
+  async inspectAsset(
+    @Param('id') id: string,
+    @Body() dto: SubmitInspectionDto,
+  ) {
+    const asset = await this.assetRepository.findById(id);
+    if (!asset) {
+      throw new NotFoundException(`Activo con ID ${id} no encontrado.`);
+    }
+
+    await this.assetRepository.saveMaintenanceReport({
+      assetId: id,
+      diagnosis: dto.diagnosis,
+      estimatedCost: dto.estimatedCost,
+      action: dto.action,
+    });
+
+    if (dto.action === 'Recomendar_Baja') {
+      const isObsolete = dto.diagnosis.toLowerCase().includes('obsoleto') || 
+                         dto.diagnosis.toLowerCase().includes('obsolescencia');
+      asset.status = isObsolete ? AssetStatus.OBSOLETO : AssetStatus.DANADO;
+      await this.assetRepository.save(asset);
+    }
+
+    return {
+      message: 'Inspección técnica registrada exitosamente.',
+      newStatus: asset.status,
+    };
   }
 }

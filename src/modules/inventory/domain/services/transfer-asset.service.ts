@@ -40,7 +40,7 @@ export class TransferAssetService implements TransferAssetUseCase {
       fromResponsible = assetAssignments[0].responsible;
     }
 
-    // 4. Registrar la transferencia en estado "Aprobada"
+    // 4. Registrar la transferencia en estado "Pendiente"
     const transfer = new Transfer(
       randomUUID(),
       command.assetId,
@@ -49,28 +49,11 @@ export class TransferAssetService implements TransferAssetUseCase {
       command.toUnit,
       command.toResponsible,
       command.date,
-      'Aprobada',
+      'Pendiente',
       command.reason,
     );
 
-    // 5. Actualizar la ubicación del activo (y garantizar estado Asignado)
-    asset.location = command.toUnit;
-    asset.status = AssetStatus.ASIGNADO;
-    asset.updatedAt = new Date();
-
-    // 6. Crear un nuevo registro de asignación para el nuevo responsable
-    const newAssignment = new Assignment(
-      randomUUID(),
-      command.assetId,
-      command.toResponsible,
-      command.date,
-      command.toUnit,
-      `Transferencia desde ${fromUnit} (${fromResponsible}). Motivo: ${command.reason}`,
-    );
-
-    // 7. Guardar cambios en persistencia
-    await this.assetRepository.save(asset);
-    await this.assignmentRepository.save(newAssignment);
+    // 5. Guardar cambios en persistencia (solo se guarda la solicitud)
     return this.transferRepository.save(transfer);
   }
 }

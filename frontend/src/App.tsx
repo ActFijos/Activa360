@@ -12,7 +12,6 @@ import { ConfiguracionUnidades } from './pages/ConfiguracionUnidades';
 import { ConfiguracionEstados } from './pages/ConfiguracionEstados';
 import { ConfiguracionTipos } from './pages/ConfiguracionTipos';
 import { Ayuda } from './pages/Ayuda';
-import { MockPage } from './pages/MockPage';
 
 function App() {
   return (

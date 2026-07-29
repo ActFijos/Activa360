@@ -623,3 +623,37 @@ body {
   grid-template-columns: 1fr 1fr;
   gap: 1rem;
 }
+
+.dropdown-link-hover:hover {
+  background-color: #f5f7f8 !important;
+  color: #1e88e5 !important;
+}
+
+@media print {
+  /* Hide sidebar and header */
+  .sidebar, .top-header, .btn-primary, .btn-secondary, .modal-footer, .no-print {
+    display: none !important;
+  }
+  .app-container {
+    display: block !important;
+  }
+  .main-wrapper {
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+  .content-body {
+    padding: 0 !important;
+  }
+  .modal-overlay {
+    position: relative !important;
+    background: none !important;
+    padding: 0 !important;
+  }
+  .modal-content {
+    box-shadow: none !important;
+    border: none !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    padding: 0 !important;
+  }
+}

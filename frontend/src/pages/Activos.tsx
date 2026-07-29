@@ -45,6 +45,174 @@ export const Activos: React.FC = () => {
 
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+  const [validLocations, setValidLocations] = useState<string[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const filteredAssets = assets.filter(asset =>
+    asset.qrCode.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    asset.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  // Inspection states
+  const [isInspectModalOpen, setIsInspectModalOpen] = useState(false);
+  const [inspectTargetAsset, setInspectTargetAsset] = useState<Asset | null>(null);
+  const [inspectFormData, setInspectFormData] = useState({
+    diagnosis: '',
+    estimatedCost: 0,
+    action: 'Reparar',
+  });
+  const [inspectErrors, setInspectErrors] = useState<Record<string, string>>({});
+  const [inspectSubmitError, setInspectSubmitError] = useState<string | null>(null);
+  const [isSubmittingInspection, setIsSubmittingInspection] = useState(false);
+
+  const handleOpenInspectModal = (asset: Asset) => {
+    setInspectTargetAsset(asset);
+    setInspectFormData({
+      diagnosis: '',
+      estimatedCost: 0.0,
+      action: 'Reparar',
+    });
+    setInspectErrors({});
+    setInspectSubmitError(null);
+    setIsInspectModalOpen(true);
+  };
+
+  const handleInspectSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setInspectSubmitError(null);
+
+    const errors: Record<string, string> = {};
+    if (inspectFormData.diagnosis.length < 10) {
+      errors.diagnosis = 'El diagnóstico debe tener al menos 10 caracteres explicativos.';
+    }
+    if (inspectFormData.estimatedCost < 0) {
+      errors.estimatedCost = 'El costo estimado de reparación no puede ser negativo.';
+    }
+
+    if (Object.keys(errors).length > 0) {
+      setInspectErrors(errors);
+      return;
+    }
+
+    setIsSubmittingInspection(true);
+    try {
+      const response = await fetch(`http://localhost:3000/activos/${inspectTargetAsset?.id}/inspeccionar`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(inspectFormData),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Error al guardar la inspección');
+      }
+
+      await fetchAssets();
+      setIsInspectModalOpen(false);
+    } catch (err: any) {
+      setInspectSubmitError(err.message || 'Error al conectar con el servidor');
+    } finally {
+      setIsSubmittingInspection(false);
+    }
+  };
+
+  useEffect(() => {
+    const saved = localStorage.getItem('cfg_environments');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        const names = parsed.map((env: any) => `${env.name} - ${env.unit}`);
+        setValidLocations(names);
+      } catch (e) {
+        // fallback
+      }
+    } else {
+      setValidLocations([
+        'Almacén Central',
+        'Aula 345 - Facultad de Tecnología',
+        'Oficina de Administración - Rectorado',
+        'Laboratorio de Química - Facultad de Medicina',
+        'Sala de Conferencias A - Facultad de Tecnología',
+        'Biblioteca Principal - Rectorado',
+        'Aula Magna - Facultad de Derecho',
+        'Almacén General - Almacén Central',
+        'Sala de Profesores - Facultad de Tecnología',
+      ]);
+    }
+  }, []);
+
+  const validateField = (name: string, value: any, currentFormData = formData) => {
+    let errorMsg = '';
+    const nowStr = new Date().toISOString().split('T')[0];
+
+    switch (name) {
+      case 'qrCode':
+        if (!value) {
+          errorMsg = 'El código QR es requerido.';
+        } else if (!/^(ACT|QR)-[a-zA-Z0-9-]+$/.test(value)) {
+          errorMsg = 'El código QR debe comenzar con "ACT-" o "QR-" seguido de letras, números o guiones.';
+        }
+        break;
+      case 'name':
+        if (!value || value.trim() === '') {
+          errorMsg = 'La descripción es requerida.';
+        }
+        break;
+      case 'location':
+        if (!value || value.trim() === '') {
+          errorMsg = 'La ubicación física es requerida.';
+        } else if (validLocations.length > 0 && !validLocations.includes(value)) {
+          errorMsg = 'La ubicación seleccionada no es una unidad/ambiente registrado.';
+        }
+        break;
+      case 'status':
+        if (value === 'Dañado' || value === 'Obsoleto' || value === 'Dado_De_Baja' || value === 'En_Proceso_Baja') {
+          errorMsg = 'No se permite registrar un activo directamente en estado Dañado o Dado de Baja.';
+        }
+        break;
+      case 'usefulLife':
+        if (value !== undefined && value !== null && value < 1) {
+          errorMsg = 'La vida útil debe ser al menos de 1 año.';
+        }
+        break;
+      case 'purchaseValue':
+        if (value === undefined || value === null || value <= 0) {
+          errorMsg = 'El valor de adquisición debe ser mayor a 0.';
+        }
+        break;
+      case 'purchaseDate':
+        if (!value) {
+          errorMsg = 'La fecha de compra es requerida.';
+        } else if (value > nowStr) {
+          errorMsg = 'La fecha de compra no puede ser una fecha futura.';
+        }
+        break;
+      case 'entryDate':
+        if (!value) {
+          errorMsg = 'La fecha de ingreso es requerida.';
+        } else if (value > nowStr) {
+          errorMsg = 'La fecha de ingreso no puede ser una fecha futura.';
+        } else if (currentFormData.purchaseDate && value < currentFormData.purchaseDate) {
+          errorMsg = 'La fecha de ingreso no puede ser anterior a la de compra.';
+        }
+        break;
+      default:
+        break;
+    }
+
+    setFormErrors(prev => {
+      const nextErrors = { ...prev };
+      if (errorMsg) {
+        nextErrors[name] = errorMsg;
+      } else {
+        delete nextErrors[name];
+      }
+      return nextErrors;
+    });
+  };
 
   const fetchAssets = async () => {
     setIsLoading(true);
@@ -68,8 +236,8 @@ export const Activos: React.FC = () => {
   }, []);
 
   const handleOpenModal = () => {
-    // Generate a unique QR code on opening modal
-    const generatedQr = `UMSS-SCAF-${Date.now().toString().slice(-6)}`;
+    // Generate a unique QR code on opening modal with compliant prefix
+    const generatedQr = `ACT-2026-${Date.now().toString().slice(-6)}`;
     setFormData({
       qrCode: generatedQr,
       name: '',
@@ -79,7 +247,7 @@ export const Activos: React.FC = () => {
       origin: 'Compra',
       purchaseDate: new Date().toISOString().split('T')[0],
       entryDate: new Date().toISOString().split('T')[0],
-      purchaseValue: 0.0,
+      purchaseValue: 10.0, // Start with a positive default
       warrantyMonths: 12,
       location: 'Almacén Central',
       providerName: '',
@@ -87,11 +255,15 @@ export const Activos: React.FC = () => {
       providerPhone: '',
     });
     setSubmitError(null);
+    setFormErrors({});
     setCurrentStep(1);
     setIsModalOpen(true);
   };
 
-  const handleCloseModal = () => setIsModalOpen(false);
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setFormErrors({});
+  };
 
   const handleScanSuccess = async (scannedQr: string) => {
     try {
@@ -110,20 +282,60 @@ export const Activos: React.FC = () => {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    setFormData({
+    
+    let parsedValue: any = value;
+    if (name === 'usefulLife' || name === 'warrantyMonths') {
+      parsedValue = value === '' ? undefined : parseInt(value) || undefined;
+    } else if (name === 'purchaseValue') {
+      parsedValue = value === '' ? 0.0 : parseFloat(value) || 0.0;
+    }
+
+    const updatedFormData = {
       ...formData,
-      [name]: name === 'usefulLife' || name === 'warrantyMonths' 
-        ? value === '' ? undefined : parseInt(value) || undefined
-        : name === 'purchaseValue' 
-          ? value === '' ? 0.0 : parseFloat(value) || 0.0
-          : value,
-    });
+      [name]: parsedValue,
+    };
+
+    setFormData(updatedFormData);
+    validateField(name, parsedValue, updatedFormData);
+
+    // If purchaseDate changes, re-validate entryDate as it depends on it
+    if (name === 'purchaseDate') {
+      validateField('entryDate', updatedFormData.entryDate, updatedFormData);
+    }
   };
 
   const handleNextStep = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.name || !formData.location) {
-      setSubmitError('Por favor complete todos los campos requeridos (*)');
+    
+    // Trigger validation for all step 1 fields
+    const fieldsToValidate = ['name', 'location', 'qrCode', 'usefulLife', 'purchaseValue', 'purchaseDate', 'entryDate'];
+    let hasErrors = false;
+    const nowStr = new Date().toISOString().split('T')[0];
+
+    fieldsToValidate.forEach(field => {
+      const value = (formData as any)[field];
+      validateField(field, value, formData);
+
+      // Manual check to block step since state updates are async
+      if (field === 'qrCode' && (!value || !/^(ACT|QR)-[a-zA-Z0-9-]+$/.test(value))) {
+        hasErrors = true;
+      } else if (field === 'name' && (!value || value.trim() === '')) {
+        hasErrors = true;
+      } else if (field === 'location' && (!value || value.trim() === '')) {
+        hasErrors = true;
+      } else if (field === 'usefulLife' && value !== undefined && value !== null && value < 1) {
+        hasErrors = true;
+      } else if (field === 'purchaseValue' && (value === undefined || value === null || value <= 0)) {
+        hasErrors = true;
+      } else if (field === 'purchaseDate' && (!value || value > nowStr)) {
+        hasErrors = true;
+      } else if (field === 'entryDate' && (!value || value > nowStr || (formData.purchaseDate && value < formData.purchaseDate))) {
+        hasErrors = true;
+      }
+    });
+
+    if (hasErrors || Object.keys(formErrors).length > 0) {
+      setSubmitError('Por favor corrija los errores en el formulario antes de continuar.');
       return;
     }
     setSubmitError(null);
@@ -197,6 +409,18 @@ export const Activos: React.FC = () => {
         </button>
       </div>
 
+      {/* Buscador de activos */}
+      <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', backgroundColor: '#fff', padding: '1rem', borderRadius: '8px', border: '1px solid #cfd8dc' }}>
+        <span style={{ fontSize: '1.2rem' }}>🔍</span>
+        <input
+          type="text"
+          placeholder="Buscar activo por código QR o descripción..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          style={{ width: '100%', padding: '0.5rem', border: '1px solid #b0bec5', borderRadius: '6px', fontSize: '0.9rem' }}
+        />
+      </div>
+
       {error && (
         <div style={{ padding: '1rem', backgroundColor: '#ffebee', color: '#c62828', borderRadius: '8px', fontSize: '0.9rem' }}>
           ⚠️ {error}. <button onClick={fetchAssets} style={{ background: 'none', border: 'none', color: '#c62828', textDecoration: 'underline', cursor: 'pointer', fontWeight: 'bold' }}>Reintentar</button>
@@ -212,7 +436,6 @@ export const Activos: React.FC = () => {
           <p style={{ fontSize: '0.9rem' }}>Comience agregando su primer activo fijo haciendo clic en el botón superior.</p>
         </div>
       ) : (
-        <div className="table-container">
           <table className="data-table">
             <thead>
               <tr>
@@ -222,10 +445,11 @@ export const Activos: React.FC = () => {
                 <th>Estado</th>
                 <th>Valor ($us)</th>
                 <th>Ubicación Actual</th>
+                <th>Acciones</th>
               </tr>
             </thead>
             <tbody>
-              {assets.map((asset) => (
+              {filteredAssets.map((asset) => (
                 <tr key={asset.id}>
                   <td style={{ fontWeight: 'bold', color: '#1565c0', fontFamily: 'monospace' }}>
                     {asset.qrCode}
@@ -241,11 +465,20 @@ export const Activos: React.FC = () => {
                     ${asset.purchaseValue.toFixed(2)}
                   </td>
                   <td>{asset.location}</td>
+                  <td>
+                    {(asset.status === 'Nuevo' || asset.status === 'Asignado') && (
+                      <button
+                        onClick={() => handleOpenInspectModal(asset)}
+                        style={{ padding: '0.35rem 0.6rem', fontSize: '0.8rem', backgroundColor: '#e0f7fa', border: '1px solid #00acc1', color: '#006064', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}
+                      >
+                        🔧 Inspección
+                      </button>
+                    )}
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
-        </div>
       )}
 
       {/* Modal de Registro Paso a Paso (Figma image3.png & image4) */}
@@ -286,9 +519,12 @@ export const Activos: React.FC = () => {
                       placeholder="Descripción detallada, marca, modelo, serie"
                       value={formData.name}
                       onChange={handleChange}
-                      style={{ width: '100%', minHeight: '60px', padding: '0.75rem', border: '1px solid #b0bec5', borderRadius: '6px', fontSize: '0.9rem' }}
+                      style={{ width: '100%', minHeight: '60px', padding: '0.75rem', border: formErrors.name ? '1px solid #d32f2f' : '1px solid #b0bec5', borderRadius: '6px', fontSize: '0.9rem' }}
                       required
                     />
+                    {formErrors.name && (
+                      <span style={{ color: '#d32f2f', fontSize: '0.75rem', marginTop: '0.25rem', display: 'block' }}>{formErrors.name}</span>
+                    )}
                   </div>
 
                   <div className="form-group">
@@ -309,7 +545,11 @@ export const Activos: React.FC = () => {
                       name="usefulLife"
                       value={formData.usefulLife || ''}
                       onChange={handleChange}
+                      style={{ borderColor: formErrors.usefulLife ? '#d32f2f' : undefined }}
                     />
+                    {formErrors.usefulLife && (
+                      <span style={{ color: '#d32f2f', fontSize: '0.75rem', marginTop: '0.25rem', display: 'block' }}>{formErrors.usefulLife}</span>
+                    )}
                   </div>
 
                   <div className="form-group">
@@ -317,8 +557,6 @@ export const Activos: React.FC = () => {
                     <select name="status" value={formData.status} onChange={handleChange} required>
                       <option value="Nuevo">Nuevo</option>
                       <option value="Asignado">Asignado</option>
-                      <option value="Dañado">Dañado</option>
-                      <option value="Obsoleto">Obsoleto</option>
                     </select>
                   </div>
 
@@ -338,8 +576,12 @@ export const Activos: React.FC = () => {
                       name="purchaseDate"
                       value={formData.purchaseDate}
                       onChange={handleChange}
+                      style={{ borderColor: formErrors.purchaseDate ? '#d32f2f' : undefined }}
                       required
                     />
+                    {formErrors.purchaseDate && (
+                      <span style={{ color: '#d32f2f', fontSize: '0.75rem', marginTop: '0.25rem', display: 'block' }}>{formErrors.purchaseDate}</span>
+                    )}
                   </div>
 
                   <div className="form-group">
@@ -349,8 +591,12 @@ export const Activos: React.FC = () => {
                       name="entryDate"
                       value={formData.entryDate}
                       onChange={handleChange}
+                      style={{ borderColor: formErrors.entryDate ? '#d32f2f' : undefined }}
                       required
                     />
+                    {formErrors.entryDate && (
+                      <span style={{ color: '#d32f2f', fontSize: '0.75rem', marginTop: '0.25rem', display: 'block' }}>{formErrors.entryDate}</span>
+                    )}
                   </div>
 
                   <div className="form-group">
@@ -361,8 +607,12 @@ export const Activos: React.FC = () => {
                       name="purchaseValue"
                       value={formData.purchaseValue}
                       onChange={handleChange}
+                      style={{ borderColor: formErrors.purchaseValue ? '#d32f2f' : undefined }}
                       required
                     />
+                    {formErrors.purchaseValue && (
+                      <span style={{ color: '#d32f2f', fontSize: '0.75rem', marginTop: '0.25rem', display: 'block' }}>{formErrors.purchaseValue}</span>
+                    )}
                   </div>
 
                   <div className="form-group">
@@ -377,14 +627,21 @@ export const Activos: React.FC = () => {
 
                   <div className="form-group" style={{ gridColumn: 'span 2' }}>
                     <label>Ubicación Física Inicial *</label>
-                    <input
-                      type="text"
+                    <select
                       name="location"
-                      placeholder="Ej: Almacén de Activos Fijos - Planta Baja"
                       value={formData.location}
                       onChange={handleChange}
+                      style={{ width: '100%', padding: '0.6rem 0.75rem', border: formErrors.location ? '1px solid #d32f2f' : '1px solid #cfd8dc', borderRadius: '6px', fontSize: '0.9rem' }}
                       required
-                    />
+                    >
+                      <option value="">Seleccione un ambiente registrado...</option>
+                      {validLocations.map((loc) => (
+                        <option key={loc} value={loc}>{loc}</option>
+                      ))}
+                    </select>
+                    {formErrors.location && (
+                      <span style={{ color: '#d32f2f', fontSize: '0.75rem', marginTop: '0.25rem', display: 'block' }}>{formErrors.location}</span>
+                    )}
                   </div>
 
                   <div className="form-group">
@@ -395,7 +652,7 @@ export const Activos: React.FC = () => {
                         name="qrCode"
                         value={formData.qrCode}
                         onChange={handleChange}
-                        style={{ backgroundColor: '#f1f8e9', fontWeight: 'bold', flexGrow: 1 }}
+                        style={{ backgroundColor: '#f1f8e9', fontWeight: 'bold', flexGrow: 1, borderColor: formErrors.qrCode ? '#d32f2f' : undefined }}
                         required
                       />
                       <button 
@@ -407,6 +664,9 @@ export const Activos: React.FC = () => {
                         📷
                       </button>
                     </div>
+                    {formErrors.qrCode && (
+                      <span style={{ color: '#d32f2f', fontSize: '0.75rem', marginTop: '0.25rem', display: 'block' }}>{formErrors.qrCode}</span>
+                    )}
                   </div>
 
                 </div>
@@ -485,6 +745,89 @@ export const Activos: React.FC = () => {
           </div>
         </div>
       )}
+
+      {isInspectModalOpen && inspectTargetAsset && (
+        <div className="modal-overlay">
+          <form className="modal-content" onSubmit={handleInspectSubmit} style={{ maxWidth: '550px', width: '90%' }}>
+            <div className="modal-header" style={{ borderBottom: '1px solid #eceff1', paddingBottom: '1rem' }}>
+              <h3>Registrar Inspección Técnica</h3>
+              <button type="button" className="close-btn" onClick={() => setIsInspectModalOpen(false)}>&times;</button>
+            </div>
+
+            <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', marginTop: '1.5rem' }}>
+              <div style={{ padding: '0.75rem', backgroundColor: '#e0f7fa', borderRadius: '6px', fontSize: '0.85rem' }}>
+                <strong>Activo a inspeccionar:</strong> {inspectTargetAsset.qrCode} - {inspectTargetAsset.name}
+              </div>
+
+              <div className="form-group">
+                <label>Diagnóstico Técnico *</label>
+                <textarea
+                  placeholder="Detalle el estado del equipo y fallas encontradas..."
+                  value={inspectFormData.diagnosis}
+                  onChange={(e) => {
+                    setInspectFormData(prev => ({ ...prev, diagnosis: e.target.value }));
+                    if (e.target.value.length >= 10) {
+                      setInspectErrors(prev => { const next = { ...prev }; delete next.diagnosis; return next; });
+                    }
+                  }}
+                  style={{ width: '100%', minHeight: '80px', padding: '0.75rem', border: inspectErrors.diagnosis ? '1px solid #d32f2f' : '1px solid #b0bec5', borderRadius: '6px', fontSize: '0.9rem' }}
+                  required
+                />
+                {inspectErrors.diagnosis && (
+                  <span style={{ color: '#d32f2f', fontSize: '0.75rem', marginTop: '0.25rem', display: 'block' }}>{inspectErrors.diagnosis}</span>
+                )}
+              </div>
+
+              <div className="form-group">
+                <label>Costo Estimado de Reparación ($us) *</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={inspectFormData.estimatedCost}
+                  onChange={(e) => {
+                    const val = parseFloat(e.target.value) || 0;
+                    setInspectFormData(prev => ({ ...prev, estimatedCost: val }));
+                    if (val >= 0) {
+                      setInspectErrors(prev => { const next = { ...prev }; delete next.estimatedCost; return next; });
+                    }
+                  }}
+                  style={{ borderColor: inspectErrors.estimatedCost ? '#d32f2f' : undefined }}
+                  required
+                />
+                {inspectErrors.estimatedCost && (
+                  <span style={{ color: '#d32f2f', fontSize: '0.75rem', marginTop: '0.25rem', display: 'block' }}>{inspectErrors.estimatedCost}</span>
+                )}
+              </div>
+
+              <div className="form-group">
+                <label>Decisión / Acción Sugerida *</label>
+                <select
+                  value={inspectFormData.action}
+                  onChange={(e) => setInspectFormData(prev => ({ ...prev, action: e.target.value }))}
+                  required
+                >
+                  <option value="Reparar">Reparar (El activo sigue operativo/asignado)</option>
+                  <option value="Recomendar_Baja">Recomendar Baja (El activo está obsoleto o irreparable)</option>
+                </select>
+              </div>
+            </div>
+
+            {inspectSubmitError && (
+              <div style={{ color: '#d32f2f', fontSize: '0.85rem', marginTop: '1rem', padding: '0.5rem', backgroundColor: '#ffebee', borderRadius: '4px' }}>
+                ⚠️ {inspectSubmitError}
+              </div>
+            )}
+
+            <div className="modal-footer" style={{ borderTop: '1px solid #eceff1', paddingTop: '1rem', marginTop: '1.5rem', display: 'flex', justifyContent: 'flex-end', gap: '1rem' }}>
+              <button type="button" className="btn-secondary" onClick={() => setIsInspectModalOpen(false)} disabled={isSubmittingInspection}>Cancelar</button>
+              <button type="submit" className="btn-primary" disabled={isSubmittingInspection}>
+                {isSubmittingInspection ? 'Registrando...' : 'Registrar Inspección'}
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
       <QRScannerModal 
         isOpen={isScannerOpen} 
         onClose={() => setIsScannerOpen(false)} 

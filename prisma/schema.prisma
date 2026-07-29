@@ -41,6 +41,7 @@ model Asset {
   providerPhone   String?
 
   movements       Movement[]
+  maintenances    MaintenanceReport[]
 }
 
 // Modelo de Geolocalización y Escaneo (Historial de ubicaciones)
@@ -86,4 +87,15 @@ model User {
   username String  @unique
   cargo    String? // Cargo del usuario (Ej: Administrador de Sistemas)
   password String? // Contraseña del usuario
+}
+
+model MaintenanceReport {
+  id            String   @id @default(uuid())
+  assetId       String
+  diagnosis     String   // Detalle técnico de la falla
+  estimatedCost Float    // Costo estimado de reparación
+  action        String   // "Reparar" o "Recomendar_Baja"
+  inspectedAt   DateTime @default(now())
+  
+  asset         Asset    @relation(fields: [assetId], references: [id], onDelete: Cascade)
 }

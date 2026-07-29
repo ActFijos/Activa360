@@ -63,4 +63,13 @@ export class InMemoryAssetRepository implements AssetRepositoryPort {
   async findAll(): Promise<Asset[]> {
     return Array.from(this.assets.values());
   }
+
+  async saveMaintenanceReport(report: {
+    assetId: string;
+    diagnosis: string;
+    estimatedCost: number;
+    action: string;
+  }): Promise<void> {
+    // mock operation
+  }
 }

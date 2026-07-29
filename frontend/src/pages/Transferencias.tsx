@@ -1,5 +1,31 @@
 import React, { useState, useEffect } from 'react';
+import { z } from 'zod';
 import { QRScannerModal } from '../components/QRScannerModal';
+
+const transferSchema = z.object({
+  assetId: z.string().min(1, 'Debe seleccionar un activo.'),
+  toUnit: z.string().min(1, 'La unidad de destino es obligatoria.'),
+  toResponsible: z.string().min(3, 'El nombre del responsable debe tener al menos 3 caracteres.'),
+  date: z.string().refine(val => {
+    if (!val) return false;
+    const dateVal = new Date(val);
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1); // timezone offset buffer
+    return dateVal <= today;
+  }, 'La fecha de transferencia no puede ser una fecha futura.'),
+  reason: z.string()
+    .min(10, 'El motivo debe ser detallado (mínimo 10 caracteres).')
+    .max(500, 'El motivo no puede superar los 500 caracteres.'),
+  currentUnit: z.string().optional(),
+}).refine(data => {
+  if (data.currentUnit && data.toUnit === data.currentUnit) {
+    return false;
+  }
+  return true;
+}, {
+  message: 'La unidad de destino no puede ser la misma ubicación actual del activo.',
+  path: ['toUnit'],
+});
 
 interface Asset {
   id: string;
@@ -55,6 +81,37 @@ export const Transferencias: React.FC = () => {
   const [submitSuccess, setSubmitSuccess] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+  const [validLocations, setValidLocations] = useState<string[]>([]);
+
+  const validateField = (name: string, value: any, currentFormData = {
+    assetId: selectedAsset?.id || '',
+    toUnit: name === 'toUnit' ? value : newUnit,
+    toResponsible: name === 'toResponsible' ? value : selectedEmployee,
+    date: name === 'date' ? value : transferDate,
+    reason: name === 'reason' ? value : reason,
+    currentUnit: selectedAsset?.location || '',
+  }) => {
+    try {
+      const result = transferSchema.safeParse(currentFormData);
+      setFormErrors(prev => {
+        const next = { ...prev };
+        if (!result.success) {
+          const issue = result.error.issues.find(iss => iss.path.includes(name));
+          if (issue) {
+            next[name] = issue.message;
+          } else {
+            delete next[name];
+          }
+        } else {
+          delete next[name];
+        }
+        return next;
+      });
+    } catch (e) {
+      // ignore
+    }
+  };
 
   const loadData = async () => {
     setIsLoading(true);
@@ -102,7 +159,65 @@ export const Transferencias: React.FC = () => {
 
   useEffect(() => {
     loadData();
+    const saved = localStorage.getItem('cfg_environments');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        const names = parsed.map((env: any) => `${env.name} - ${env.unit}`);
+        setValidLocations(names);
+      } catch (e) {
+        // fallback
+      }
+    } else {
+      setValidLocations([
+        'Almacén Central',
+        'Aula 345 - Facultad de Tecnología',
+        'Oficina de Administración - Rectorado',
+        'Laboratorio de Química - Facultad de Medicina',
+        'Sala de Conferencias A - Facultad de Tecnología',
+        'Biblioteca Principal - Rectorado',
+        'Aula Magna - Facultad de Derecho',
+        'Almacén General - Almacén Central',
+        'Sala de Profesores - Facultad de Tecnología',
+      ]);
+    }
   }, []);
+
+  const handleApprove = async (id: string) => {
+    if (!window.confirm('¿Está seguro de que desea aprobar esta transferencia de activo?')) return;
+    try {
+      const res = await fetch(`http://localhost:3000/activos/transferencias/${id}/aprobar`, {
+        method: 'POST'
+      });
+      if (res.ok) {
+        alert('Transferencia aprobada exitosamente.');
+        loadData();
+      } else {
+        alert('Error al aprobar la transferencia.');
+      }
+    } catch (e) {
+      console.error(e);
+      alert('Error de conexión.');
+    }
+  };
+
+  const handleReject = async (id: string) => {
+    if (!window.confirm('¿Está seguro de que desea rechazar esta transferencia de activo?')) return;
+    try {
+      const res = await fetch(`http://localhost:3000/activos/transferencias/${id}/rechazar`, {
+        method: 'POST'
+      });
+      if (res.ok) {
+        alert('Transferencia rechazada.');
+        loadData();
+      } else {
+        alert('Error al rechazar la transferencia.');
+      }
+    } catch (e) {
+      console.error(e);
+      alert('Error de conexión.');
+    }
+  };
 
   // Filtered lists
   const filteredAssets = searchAssetQuery.trim() === '' 
@@ -119,12 +234,33 @@ export const Transferencias: React.FC = () => {
   const handleSelectAsset = (asset: Asset) => {
     setSelectedAsset(asset);
     setSearchAssetQuery(`${asset.qrCode} - ${asset.name}`);
+    setFormErrors(prev => {
+      const next = { ...prev };
+      delete next.assetId;
+      return next;
+    });
+    // Check if newUnit matches
+    if (newUnit) {
+      validateField('toUnit', newUnit, {
+        assetId: asset.id,
+        toUnit: newUnit,
+        toResponsible: selectedEmployee,
+        date: transferDate,
+        reason,
+        currentUnit: asset.location,
+      });
+    }
   };
 
   const handleSelectEmployee = (fullName: string) => {
     setSelectedEmployee(fullName);
     setSearchEmployeeQuery(fullName);
     setShowEmployeeSuggestions(false);
+    setFormErrors(prev => {
+      const next = { ...prev };
+      delete next.toResponsible;
+      return next;
+    });
   };
 
   const handleScanSuccess = async (scannedQr: string) => {
@@ -139,6 +275,21 @@ export const Transferencias: React.FC = () => {
           setSelectedAsset(asset);
           setSearchAssetQuery(`${asset.qrCode} - ${asset.name}`);
           setSubmitError(null);
+          setFormErrors(prev => {
+            const next = { ...prev };
+            delete next.assetId;
+            return next;
+          });
+          if (newUnit) {
+            validateField('toUnit', newUnit, {
+              assetId: asset.id,
+              toUnit: newUnit,
+              toResponsible: selectedEmployee,
+              date: transferDate,
+              reason,
+              currentUnit: asset.location,
+            });
+          }
         }
       } else {
         setSubmitError('⚠️ Código QR de activo no encontrado.');
@@ -160,24 +311,31 @@ export const Transferencias: React.FC = () => {
     setSubmitError(null);
     setSubmitSuccess(false);
     setIsFormOpen(false);
+    setFormErrors({});
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedAsset) {
-      setSubmitError('Por favor seleccione un activo válido.');
-      return;
-    }
-    if (!newUnit) {
-      setSubmitError('Por favor especifique la nueva unidad de destino.');
-      return;
-    }
-    if (!selectedEmployee) {
-      setSubmitError('Por favor seleccione el nuevo responsable.');
-      return;
-    }
-    if (!reason) {
-      setSubmitError('Por favor describa el motivo de la transferencia.');
+
+    const dataToValidate = {
+      assetId: selectedAsset?.id || '',
+      toUnit: newUnit,
+      toResponsible: selectedEmployee,
+      date: transferDate,
+      reason: reason,
+      currentUnit: selectedAsset?.location || '',
+    };
+
+    const result = transferSchema.safeParse(dataToValidate);
+    if (!result.success) {
+      const errors: Record<string, string> = {};
+      result.error.issues.forEach((err: any) => {
+        if (err.path[0]) {
+          errors[err.path[0] as string] = err.message;
+        }
+      });
+      setFormErrors(errors);
+      setSubmitError('Por favor complete todos los datos requeridos correctamente.');
       return;
     }
 
@@ -192,7 +350,7 @@ export const Transferencias: React.FC = () => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          assetId: selectedAsset.id,
+          assetId: selectedAsset?.id,
           toUnit: newUnit,
           toResponsible: selectedEmployee,
           date: transferDate,
@@ -325,13 +483,23 @@ export const Transferencias: React.FC = () => {
 
               <div className="form-group">
                 <label>Nueva Unidad *</label>
-                <input
-                  type="text"
-                  placeholder="Buscar unidad o escribir destino..."
+                <select
                   value={newUnit}
-                  onChange={(e) => setNewUnit(e.target.value)}
+                  onChange={(e) => {
+                    setNewUnit(e.target.value);
+                    validateField('toUnit', e.target.value);
+                  }}
+                  style={{ width: '100%', padding: '0.6rem 0.75rem', border: formErrors.toUnit ? '1px solid #d32f2f' : '1px solid #cfd8dc', borderRadius: '6px', fontSize: '0.9rem' }}
                   required
-                />
+                >
+                  <option value="">Seleccione la unidad destino...</option>
+                  {validLocations.map((loc) => (
+                    <option key={loc} value={loc}>{loc}</option>
+                  ))}
+                </select>
+                {formErrors.toUnit && (
+                  <span style={{ color: '#d32f2f', fontSize: '0.75rem', marginTop: '0.25rem', display: 'block' }}>{formErrors.toUnit}</span>
+                )}
               </div>
 
               <div className="form-group" style={{ position: 'relative' }}>
@@ -344,10 +512,15 @@ export const Transferencias: React.FC = () => {
                     setSearchEmployeeQuery(e.target.value);
                     setSelectedEmployee(e.target.value);
                     setShowEmployeeSuggestions(true);
+                    validateField('toResponsible', e.target.value);
                   }}
                   onFocus={() => setShowEmployeeSuggestions(true)}
+                  style={{ borderColor: formErrors.toResponsible ? '#d32f2f' : undefined }}
                   required
                 />
+                {formErrors.toResponsible && (
+                  <span style={{ color: '#d32f2f', fontSize: '0.75rem', marginTop: '0.25rem', display: 'block' }}>{formErrors.toResponsible}</span>
+                )}
                 
                 {/* Employee suggestions */}
                 {showEmployeeSuggestions && searchEmployeeQuery.trim() !== '' && (
@@ -392,9 +565,16 @@ export const Transferencias: React.FC = () => {
                 <input
                   type="date"
                   value={transferDate}
-                  onChange={(e) => setTransferDate(e.target.value)}
+                  onChange={(e) => {
+                    setTransferDate(e.target.value);
+                    validateField('date', e.target.value);
+                  }}
+                  style={{ borderColor: formErrors.date ? '#d32f2f' : undefined }}
                   required
                 />
+                {formErrors.date && (
+                  <span style={{ color: '#d32f2f', fontSize: '0.75rem', marginTop: '0.25rem', display: 'block' }}>{formErrors.date}</span>
+                )}
               </div>
 
               <div className="form-group" style={{ gridColumn: 'span 2' }}>
@@ -402,10 +582,16 @@ export const Transferencias: React.FC = () => {
                 <textarea
                   placeholder="Describa el motivo de la transferencia..."
                   value={reason}
-                  onChange={(e) => setReason(e.target.value)}
-                  style={{ width: '100%', minHeight: '80px', padding: '0.75rem', border: '1px solid #b0bec5', borderRadius: '6px', fontSize: '0.9rem' }}
+                  onChange={(e) => {
+                    setReason(e.target.value);
+                    validateField('reason', e.target.value);
+                  }}
+                  style={{ width: '100%', minHeight: '80px', padding: '0.75rem', border: formErrors.reason ? '1px solid #d32f2f' : '1px solid #b0bec5', borderRadius: '6px', fontSize: '0.9rem' }}
                   required
                 />
+                {formErrors.reason && (
+                  <span style={{ color: '#d32f2f', fontSize: '0.75rem', marginTop: '0.25rem', display: 'block' }}>{formErrors.reason}</span>
+                )}
               </div>
 
             </div>
@@ -442,6 +628,7 @@ export const Transferencias: React.FC = () => {
                 <th>Hacia</th>
                 <th>Fecha</th>
                 <th>Estado</th>
+                <th style={{ textAlign: 'center' }}>Acciones</th>
               </tr>
             </thead>
             <tbody>
@@ -462,13 +649,35 @@ export const Transferencias: React.FC = () => {
                   </td>
                   <td>{new Date(t.date).toLocaleDateString()}</td>
                   <td>
-                    <span className={`badge ${t.status === 'Aprobada' ? 'badge-new' : 'badge-default'}`} style={{
-                      backgroundColor: t.status === 'Aprobada' ? '#e8f5e9' : '#fff8e1',
-                      color: t.status === 'Aprobada' ? '#2e7d32' : '#f57f17',
-                      borderColor: t.status === 'Aprobada' ? '#c8e6c9' : '#ffe082'
+                    <span className={`badge ${t.status === 'Aprobada' ? 'badge-new' : t.status === 'Rechazada' ? 'badge-danger' : 'badge-default'}`} style={{
+                      backgroundColor: t.status === 'Aprobada' ? '#e8f5e9' : t.status === 'Rechazada' ? '#ffebee' : '#fff8e1',
+                      color: t.status === 'Aprobada' ? '#2e7d32' : t.status === 'Rechazada' ? '#c62828' : '#f57f17',
+                      borderColor: t.status === 'Aprobada' ? '#c8e6c9' : t.status === 'Rechazada' ? '#ffcdd2' : '#ffe082'
                     }}>
                       {t.status}
                     </span>
+                  </td>
+                  <td style={{ textAlign: 'center' }}>
+                    {t.status === 'Pendiente' ? (
+                      <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center' }}>
+                        <button
+                          onClick={() => handleApprove(t.id)}
+                          className="btn-primary"
+                          style={{ padding: '4px 8px', fontSize: '0.75rem', backgroundColor: '#2e7d32', color: '#fff', borderRadius: '4px', border: 'none', cursor: 'pointer' }}
+                        >
+                          ✔️ Aprobar
+                        </button>
+                        <button
+                          onClick={() => handleReject(t.id)}
+                          className="btn-secondary"
+                          style={{ padding: '4px 8px', fontSize: '0.75rem', backgroundColor: '#c62828', color: '#fff', borderRadius: '4px', border: 'none', cursor: 'pointer' }}
+                        >
+                          ❌ Rechazar
+                        </button>
+                      </div>
+                    ) : (
+                      <span style={{ color: '#90a4ae', fontSize: '0.8rem' }}>Procesado</span>
+                    )}
                   </td>
                 </tr>
               ))}
