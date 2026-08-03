@@ -1,0 +1,13 @@
+{
+  "name": "activos-fijos-llm-web",
+  "version": "1.0.0",
+  "description": "Integración web mínima de un modelo local con Ollama para un proyecto de activos fijos",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.21.2"
+  }
+}

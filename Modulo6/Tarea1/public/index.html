@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Activos Fijos - Asistente IA</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 32px;
+        background: linear-gradient(135deg, #eff6ff, #f8fafc);
+        color: #0f172a;
+      }
+      .card {
+        max-width: 860px;
+        margin: 0 auto;
+        background: white;
+        padding: 28px;
+        border-radius: 16px;
+        box-shadow: 0 10px 30px rgba(15, 23, 42, 0.12);
+      }
+      h1 {
+        margin-top: 0;
+        color: #1d4ed8;
+      }
+      .badge {
+        display: inline-block;
+        background: #dbeafe;
+        color: #1d4ed8;
+        padding: 6px 10px;
+        border-radius: 999px;
+        font-size: 12px;
+        font-weight: bold;
+        margin-bottom: 12px;
+      }
+      textarea {
+        width: 100%;
+        min-height: 150px;
+        margin-top: 12px;
+        padding: 14px;
+        border-radius: 10px;
+        border: 1px solid #cbd5e1;
+        font-size: 14px;
+        box-sizing: border-box;
+      }
+      button {
+        margin-top: 14px;
+        background: #2563eb;
+        color: white;
+        border: none;
+        padding: 12px 18px;
+        border-radius: 10px;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: bold;
+      }
+      button:hover {
+        background: #1d4ed8;
+      }
+      .respuesta {
+        margin-top: 18px;
+        padding: 16px;
+        background: #eff6ff;
+        border-left: 5px solid #2563eb;
+        border-radius: 10px;
+        line-height: 1.6;
+        white-space: pre-wrap;
+      }
+      .small {
+        color: #475569;
+        font-size: 13px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <div class="badge">Sección de ayuda · Activos fijos</div>
+      <h1>Asistente IA para ayuda de activos fijos</h1>
+      <p class="small">Este ejemplo toma un texto real del sistema y lo envía al modelo para obtener una explicación clara y útil.</p>
+
+      <textarea id="texto">Un activo fijo es un bien de larga duración que la empresa utiliza en sus operaciones, como equipos, muebles, vehículos y maquinaria.</textarea>
+      <button id="btnConsultar">Consultar modelo</button>
+
+      <div class="respuesta" id="respuesta">
+        La respuesta del modelo aparecerá aquí.
+      </div>
+    </div>
+
+    <script>
+      document.getElementById('btnConsultar').addEventListener('click', async () => {
+        const texto = document.getElementById('texto').value;
+        const respuestaBox = document.getElementById('respuesta');
+
+        respuestaBox.textContent = 'Consultando modelo...';
+
+        try {
+          const res = await fetch('/api/ask', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ texto })
+          });
+
+          const data = await res.json();
+
+          if (!res.ok) {
+            throw new Error(data.error || 'Error en la consulta');
+          }
+
+          respuestaBox.textContent = data.respuesta;
+        } catch (error) {
+          respuestaBox.textContent = error.message;
+        }
+      });
+    </script>
+  </body>
+</html>
