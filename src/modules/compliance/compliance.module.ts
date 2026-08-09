@@ -27,6 +27,11 @@ import { PrismaBajaAdapter } from './adapters/out/db/prisma-baja.adapter.js';
       useClass: InventoryAdapter,
     },
   ],
-  exports: [InitiateBajaUseCase, BajaRepositoryPort, AssetServicePort, PrismaService],
+  exports: [
+    InitiateBajaUseCase,
+    BajaRepositoryPort,
+    AssetServicePort,
+    PrismaService,
+  ],
 })
 export class ComplianceModule {}

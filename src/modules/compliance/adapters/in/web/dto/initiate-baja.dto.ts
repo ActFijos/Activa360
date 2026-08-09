@@ -11,7 +11,9 @@ export class InitiateBajaDto {
 
   @IsString()
   @IsNotEmpty()
-  @MinLength(10, { message: 'La justificación debe tener al menos 10 caracteres' })
+  @MinLength(10, {
+    message: 'La justificación debe tener al menos 10 caracteres',
+  })
   justification: string;
 
   @IsString()

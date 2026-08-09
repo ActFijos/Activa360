@@ -29,7 +29,7 @@ export class MinioStorageAdapter implements S3StoragePort {
     bucket: string,
     key: string,
     fileBuffer: Buffer,
-    contentType: string
+    contentType: string,
   ): Promise<string> {
     try {
       this.logger.log(`Subiendo archivo a MinIO: ${bucket}/${key}`);
@@ -39,7 +39,7 @@ export class MinioStorageAdapter implements S3StoragePort {
           Key: key,
           Body: fileBuffer,
           ContentType: contentType,
-        })
+        }),
       );
       return `${process.env.MINIO_ENDPOINT || 'http://localhost:9000'}/${bucket}/${key}`;
     } catch (error) {
@@ -51,7 +51,7 @@ export class MinioStorageAdapter implements S3StoragePort {
   async getPresignedUrl(
     bucket: string,
     key: string,
-    expiresIn = 3600
+    expiresIn = 3600,
   ): Promise<string> {
     try {
       const command = new GetObjectCommand({ Bucket: bucket, Key: key });
@@ -65,7 +65,7 @@ export class MinioStorageAdapter implements S3StoragePort {
   async downloadFile(bucket: string, key: string): Promise<Buffer> {
     try {
       const response = await this.s3Client.send(
-        new GetObjectCommand({ Bucket: bucket, Key: key })
+        new GetObjectCommand({ Bucket: bucket, Key: key }),
       );
       const byteArray = await response.Body?.transformToByteArray();
       if (!byteArray) {
@@ -73,7 +73,9 @@ export class MinioStorageAdapter implements S3StoragePort {
       }
       return Buffer.from(byteArray);
     } catch (error) {
-      this.logger.error(`Error al descargar archivo de MinIO: ${error.message}`);
+      this.logger.error(
+        `Error al descargar archivo de MinIO: ${error.message}`,
+      );
       throw error;
     }
   }

@@ -34,15 +34,15 @@ export class ReportsStatsController {
     const categoryCounts: Record<string, number> = {
       'Sistemas/TI': 0,
       'Muebles y Enseres': 0,
-      'Vehículos': 0,
-      'Maquinaria': 0,
+      Vehículos: 0,
+      Maquinaria: 0,
       'Equipos de Oficina': 0,
     };
 
     const statusCounts: Record<string, number> = {};
     const locationCounts: Record<string, number> = {};
 
-    assets.forEach(asset => {
+    assets.forEach((asset) => {
       const val = asset.purchaseValue || 0;
       totalValue += val;
 
@@ -72,8 +72,13 @@ export class ReportsStatsController {
       totalValue: Math.round(totalValue),
       monthlyDepreciation: Math.round(monthlyDepreciation),
       maintenanceCount,
-      categoryDistribution: Object.entries(categoryCounts).map(([name, value]) => ({ name, value })),
-      statusDistribution: Object.entries(statusCounts).map(([name, value]) => ({ name, value })),
+      categoryDistribution: Object.entries(categoryCounts).map(
+        ([name, value]) => ({ name, value }),
+      ),
+      statusDistribution: Object.entries(statusCounts).map(([name, value]) => ({
+        name,
+        value,
+      })),
       locationDistribution: Object.entries(locationCounts)
         .map(([name, value]) => ({ name, value }))
         .sort((a, b) => b.value - a.value),
@@ -103,14 +108,17 @@ export class ReportsStatsController {
     const assets = await this.prisma.asset.findMany({ where });
     const currentYear = new Date().getFullYear();
 
-    return assets.map(asset => {
+    return assets.map((asset) => {
       const purchaseValue = asset.purchaseValue || 0;
       const usefulLife = asset.usefulLife || 5;
       const purchaseYear = new Date(asset.purchaseDate).getFullYear();
       const yearsElapsed = Math.max(0, currentYear - purchaseYear);
-      
+
       const depreciationPerYear = purchaseValue / usefulLife;
-      const accumulatedDepreciation = Math.min(purchaseValue, depreciationPerYear * yearsElapsed);
+      const accumulatedDepreciation = Math.min(
+        purchaseValue,
+        depreciationPerYear * yearsElapsed,
+      );
       const currentValue = Math.max(0, purchaseValue - accumulatedDepreciation);
 
       return {
@@ -180,14 +188,17 @@ export class ReportsStatsController {
     let totalCurrentValue = 0;
     let totalAccumulatedDepreciation = 0;
 
-    const list = assets.map(asset => {
+    const list = assets.map((asset) => {
       const purchaseValue = asset.purchaseValue || 0;
       const usefulLife = asset.usefulLife || 5;
       const purchaseYear = new Date(asset.purchaseDate).getFullYear();
       const yearsElapsed = Math.max(0, currentYear - purchaseYear);
-      
+
       const depreciationPerYear = purchaseValue / usefulLife;
-      const accumulatedDepreciation = Math.min(purchaseValue, depreciationPerYear * yearsElapsed);
+      const accumulatedDepreciation = Math.min(
+        purchaseValue,
+        depreciationPerYear * yearsElapsed,
+      );
       const currentValue = Math.max(0, purchaseValue - accumulatedDepreciation);
 
       totalPurchaseValue += purchaseValue;
@@ -239,7 +250,7 @@ export class ReportsStatsController {
       orderBy: { inspectedAt: 'desc' },
     });
 
-    return reports.map(r => ({
+    return reports.map((r) => ({
       id: r.id,
       inspectedAt: r.inspectedAt,
       diagnosis: r.diagnosis,
@@ -269,9 +280,9 @@ export class ReportsStatsController {
     }
     if (location && location !== 'Todas') {
       const assetsInLoc = await this.prisma.asset.findMany({
-        where: { location }
+        where: { location },
       });
-      const assetIds = assetsInLoc.map(a => a.id);
+      const assetIds = assetsInLoc.map((a) => a.id);
       where.assetId = { in: assetIds };
     }
 
@@ -279,7 +290,7 @@ export class ReportsStatsController {
       where,
       orderBy: { initiatedAt: 'desc' },
     });
-    
+
     const result = [];
     for (const baja of bajas) {
       const asset = await this.prisma.asset.findUnique({
@@ -317,17 +328,14 @@ export class ReportsStatsController {
       }
     }
     if (location && location !== 'Todas') {
-      where.OR = [
-        { fromUnit: location },
-        { toUnit: location }
-      ];
+      where.OR = [{ fromUnit: location }, { toUnit: location }];
     }
 
     const transfers = await this.prisma.transfer.findMany({
       where,
       orderBy: { date: 'desc' },
     });
-    
+
     const result = [];
     for (const trans of transfers) {
       const asset = await this.prisma.asset.findUnique({
@@ -356,9 +364,11 @@ export class ReportsStatsController {
     // 1. Activos dañados sin inspección técnica
     const assets = await this.prisma.asset.findMany({
       where: { status: 'Dañado' },
-      include: { maintenances: true }
+      include: { maintenances: true },
     });
-    const pendingInspections = assets.filter(a => a.maintenances.length === 0);
+    const pendingInspections = assets.filter(
+      (a) => a.maintenances.length === 0,
+    );
     for (const asset of pendingInspections) {
       alerts.push({
         id: `damaged-${asset.id}`,
@@ -373,11 +383,11 @@ export class ReportsStatsController {
     // 2. Bajas pendientes (Iniciadas)
     const pendingBajas = await this.prisma.baja.findMany({
       where: { status: 'Iniciada' },
-      orderBy: { initiatedAt: 'desc' }
+      orderBy: { initiatedAt: 'desc' },
     });
     for (const baja of pendingBajas) {
       const asset = await this.prisma.asset.findUnique({
-        where: { id: baja.assetId }
+        where: { id: baja.assetId },
       });
       alerts.push({
         id: `baja-${baja.id}`,
@@ -392,11 +402,11 @@ export class ReportsStatsController {
     // 3. Transferencias pendientes
     const pendingTransfers = await this.prisma.transfer.findMany({
       where: { status: 'Pendiente' },
-      orderBy: { date: 'desc' }
+      orderBy: { date: 'desc' },
     });
     for (const trans of pendingTransfers) {
       const asset = await this.prisma.asset.findUnique({
-        where: { id: trans.assetId }
+        where: { id: trans.assetId },
       });
       alerts.push({
         id: `transfer-${trans.id}`,
@@ -409,7 +419,9 @@ export class ReportsStatsController {
     }
 
     // Ordenar por fecha descendente
-    alerts.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    alerts.sort(
+      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
+    );
 
     return alerts;
   }

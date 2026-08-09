@@ -5,7 +5,10 @@ import pkg from 'pg';
 const { Pool } = pkg;
 
 @Injectable()
-export class PrismaService extends PrismaClient implements OnModuleInit, OnModuleDestroy {
+export class PrismaService
+  extends PrismaClient
+  implements OnModuleInit, OnModuleDestroy
+{
   private static pool: pkg.Pool;
 
   constructor() {
@@ -14,9 +17,9 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
       throw new Error('DATABASE_URL environment variable is not defined');
     }
 
-    const pool = new Pool({ 
+    const pool = new Pool({
       connectionString,
-      options: '-c search_path=app'
+      options: '-c search_path=app',
     });
     const adapter = new PrismaPg(pool, { schema: 'app' });
 

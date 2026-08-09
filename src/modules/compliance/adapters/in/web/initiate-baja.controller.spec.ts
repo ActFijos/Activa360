@@ -10,7 +10,7 @@ describe('InitiateBajaController', () => {
   beforeEach(async () => {
     fakeInitiateBajaUseCase = {
       execute: jest.fn(),
-    } as any;
+    };
 
     const module: TestingModule = await Test.createTestingModule({
       controllers: [InitiateBajaController],

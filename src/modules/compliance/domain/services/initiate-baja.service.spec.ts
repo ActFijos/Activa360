@@ -15,7 +15,7 @@ describe('InitiateBajaService (FSD-UC-003)', () => {
     fakeAssetService = {
       getAsset: jest.fn(),
       updateAssetStatus: jest.fn(),
-    } as any;
+    };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -26,7 +26,9 @@ describe('InitiateBajaService (FSD-UC-003)', () => {
     }).compile();
 
     service = module.get<InitiateBajaService>(InitiateBajaService);
-    bajaRepo = module.get<BajaRepositoryPort>(BajaRepositoryPort) as InMemoryBajaRepository;
+    bajaRepo = module.get<BajaRepositoryPort>(
+      BajaRepositoryPort,
+    ) as InMemoryBajaRepository;
   });
 
   it('debería iniciar la baja con éxito para un activo Dañado', async () => {
@@ -45,11 +47,16 @@ describe('InitiateBajaService (FSD-UC-003)', () => {
 
     expect(result.assetId).toBe('asset-1');
     expect(result.jefeId).toBe('jefe-1');
-    expect(result.justification).toBe('El equipo sufrió un cortocircuito irreparable.');
+    expect(result.justification).toBe(
+      'El equipo sufrió un cortocircuito irreparable.',
+    );
     expect(result.evidence).toBe('http://evidencia.com/foto.jpg');
     expect(result.status).toBe(BajaStatus.INICIADA);
 
-    expect(fakeAssetService.updateAssetStatus).toHaveBeenCalledWith('asset-1', 'En_Proceso_Baja');
+    expect(fakeAssetService.updateAssetStatus).toHaveBeenCalledWith(
+      'asset-1',
+      'En_Proceso_Baja',
+    );
     expect(bajaRepo.bajas.length).toBe(1);
   });
 
@@ -69,14 +76,22 @@ describe('InitiateBajaService (FSD-UC-003)', () => {
 
     expect(result.assetId).toBe('asset-2');
     expect(result.status).toBe(BajaStatus.INICIADA);
-    expect(fakeAssetService.updateAssetStatus).toHaveBeenCalledWith('asset-2', 'En_Proceso_Baja');
+    expect(fakeAssetService.updateAssetStatus).toHaveBeenCalledWith(
+      'asset-2',
+      'En_Proceso_Baja',
+    );
   });
 
   it('debería lanzar NotFoundException si el activo no existe', async () => {
     fakeAssetService.getAsset.mockResolvedValue(null);
 
     await expect(
-      service.execute('asset-non-existent', 'jefe-1', 'Justificacion corta', 'evidence'),
+      service.execute(
+        'asset-non-existent',
+        'jefe-1',
+        'Justificacion corta',
+        'evidence',
+      ),
     ).rejects.toThrow(NotFoundException);
 
     expect(fakeAssetService.updateAssetStatus).not.toHaveBeenCalled();
@@ -91,7 +106,12 @@ describe('InitiateBajaService (FSD-UC-003)', () => {
     });
 
     await expect(
-      service.execute('asset-3', 'jefe-1', 'Justificacion de prueba', 'evidence'),
+      service.execute(
+        'asset-3',
+        'jefe-1',
+        'Justificacion de prueba',
+        'evidence',
+      ),
     ).rejects.toThrow(ConflictException);
 
     expect(fakeAssetService.updateAssetStatus).not.toHaveBeenCalled();
@@ -105,11 +125,21 @@ describe('InitiateBajaService (FSD-UC-003)', () => {
     });
 
     // Registrar una baja previa para el activo 4
-    await service.execute('asset-4', 'jefe-1', 'Primera justificación', 'evidence');
+    await service.execute(
+      'asset-4',
+      'jefe-1',
+      'Primera justificación',
+      'evidence',
+    );
 
     // Intentar registrar una segunda baja para el mismo activo
     await expect(
-      service.execute('asset-4', 'jefe-1', 'Segunda justificación de prueba', 'evidence'),
+      service.execute(
+        'asset-4',
+        'jefe-1',
+        'Segunda justificación de prueba',
+        'evidence',
+      ),
     ).rejects.toThrow(ConflictException);
   });
 });

@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ConflictException,
+} from '@nestjs/common';
 import { ScanQrUseCase } from '../ports/in/scan-qr.use-case';
 import { AssetRepositoryPort } from '../ports/out/asset-repository.port';
 import { MovementRepositoryPort } from '../ports/out/movement-repository.port';

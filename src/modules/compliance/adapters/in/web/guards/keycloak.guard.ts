@@ -30,7 +30,9 @@ export class KeycloakGuard implements CanActivate {
     const authHeader = request.headers.authorization;
 
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      throw new UnauthorizedException('Token de autorización ausente o inválido');
+      throw new UnauthorizedException(
+        'Token de autorización ausente o inválido',
+      );
     }
 
     const token = authHeader.split(' ')[1];
@@ -40,14 +42,19 @@ export class KeycloakGuard implements CanActivate {
       request.user = decodedToken;
       return true;
     } catch (error) {
-      throw new UnauthorizedException(`Autenticación fallida: ${error.message}`);
+      throw new UnauthorizedException(
+        `Autenticación fallida: ${error.message}`,
+      );
     }
   }
 
   private validateToken(token: string): Promise<any> {
     return new Promise((resolve, reject) => {
       // Obtener la clave pública dinámicamente mediante el encabezado del token (kid)
-      const getKey = (header: jwt.JwtHeader, callback: jwt.SigningKeyCallback) => {
+      const getKey = (
+        header: jwt.JwtHeader,
+        callback: jwt.SigningKeyCallback,
+      ) => {
         this.client.getSigningKey(header.kid, (err, key) => {
           if (err) {
             return callback(err);

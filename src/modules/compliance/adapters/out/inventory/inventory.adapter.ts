@@ -1,5 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import { AssetServicePort, ExternalAsset } from '../../../domain/ports/out/asset-service.port';
+import {
+  AssetServicePort,
+  ExternalAsset,
+} from '../../../domain/ports/out/asset-service.port';
 import { AssetRepositoryPort } from '../../../../inventory/domain/ports/out/asset-repository.port';
 import { AssetStatus } from '../../../../inventory/domain/models/asset.model';
 

@@ -1,14 +1,14 @@
-import { 
-  Controller, 
-  Post, 
-  Get, 
+import {
+  Controller,
+  Post,
+  Get,
   Param,
-  Body, 
-  HttpCode, 
-  HttpStatus, 
-  UsePipes, 
+  Body,
+  HttpCode,
+  HttpStatus,
+  UsePipes,
   ValidationPipe,
-  NotFoundException
+  NotFoundException,
 } from '@nestjs/common';
 import { TransferAssetUseCase } from '../../../domain/ports/in/transfer-asset.use-case.js';
 import { TransferRepositoryPort } from '../../../domain/ports/out/transfer-repository.port.js';
@@ -46,30 +46,32 @@ export class TransferAssetController {
   @HttpCode(HttpStatus.OK)
   async approveTransfer(@Param('id') id: string) {
     const transfer = await this.prisma.transfer.findUnique({
-      where: { id }
+      where: { id },
     });
     if (!transfer) {
       throw new NotFoundException(`La transferencia con ID ${id} no existe`);
     }
 
     const asset = await this.prisma.asset.findUnique({
-      where: { id: transfer.assetId }
+      where: { id: transfer.assetId },
     });
     if (!asset) {
-      throw new NotFoundException(`El activo con ID ${transfer.assetId} asociado a la transferencia no existe`);
+      throw new NotFoundException(
+        `El activo con ID ${transfer.assetId} asociado a la transferencia no existe`,
+      );
     }
 
     await this.prisma.transfer.update({
       where: { id },
-      data: { status: 'Aprobada' }
+      data: { status: 'Aprobada' },
     });
 
     await this.prisma.asset.update({
       where: { id: transfer.assetId },
       data: {
         location: transfer.toUnit,
-        status: 'Asignado'
-      }
+        status: 'Asignado',
+      },
     });
 
     await this.prisma.assignment.create({
@@ -79,8 +81,8 @@ export class TransferAssetController {
         responsible: transfer.toResponsible,
         date: new Date(),
         destination: transfer.toUnit,
-        observations: `Transferencia desde ${transfer.fromUnit} (${transfer.fromResponsible}). Aprobada formalmente.`
-      }
+        observations: `Transferencia desde ${transfer.fromUnit} (${transfer.fromResponsible}). Aprobada formalmente.`,
+      },
     });
 
     return { success: true, message: 'Transferencia aprobada exitosamente' };
@@ -90,7 +92,7 @@ export class TransferAssetController {
   @HttpCode(HttpStatus.OK)
   async rejectTransfer(@Param('id') id: string) {
     const transfer = await this.prisma.transfer.findUnique({
-      where: { id }
+      where: { id },
     });
     if (!transfer) {
       throw new NotFoundException(`La transferencia con ID ${id} no existe`);
@@ -98,7 +100,7 @@ export class TransferAssetController {
 
     await this.prisma.transfer.update({
       where: { id },
-      data: { status: 'Rechazada' }
+      data: { status: 'Rechazada' },
     });
 
     return { success: true, message: 'Transferencia rechazada exitosamente' };

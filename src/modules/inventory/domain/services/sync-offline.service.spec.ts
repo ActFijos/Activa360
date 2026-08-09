@@ -76,7 +76,9 @@ describe('SyncOfflineService (FSD-UC-002)', () => {
     // Y se genera un movimiento con el timestamp offline
     expect(movementRepo.movements.length).toBe(1);
     expect(movementRepo.movements[0].assetId).toBe('asset-uuid-1');
-    expect(movementRepo.movements[0].scannedAt.getTime()).toBe(offlineDate.getTime());
+    expect(movementRepo.movements[0].scannedAt.getTime()).toBe(
+      offlineDate.getTime(),
+    );
   });
 
   it('debería ignorar la actualización si el timestamp offline es anterior o igual al del servidor (conflicto)', async () => {

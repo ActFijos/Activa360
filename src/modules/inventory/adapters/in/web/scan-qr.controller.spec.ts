@@ -12,11 +12,11 @@ describe('ScanQrController', () => {
   beforeEach(async () => {
     fakeScanQrUseCase = {
       execute: jest.fn(),
-    } as any;
+    };
 
     fakeSyncOfflineUseCase = {
       execute: jest.fn(),
-    } as any;
+    };
 
     const module: TestingModule = await Test.createTestingModule({
       controllers: [ScanQrController],

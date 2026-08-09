@@ -54,7 +54,9 @@ export class RegisterAssetController {
   async getAssetByQrCode(@Param('qrCode') qrCode: string) {
     const asset = await this.assetRepository.findByQrCode(qrCode);
     if (!asset) {
-      throw new NotFoundException(`Activo con código QR ${qrCode} no encontrado.`);
+      throw new NotFoundException(
+        `Activo con código QR ${qrCode} no encontrado.`,
+      );
     }
     return asset;
   }
@@ -79,8 +81,9 @@ export class RegisterAssetController {
     });
 
     if (dto.action === 'Recomendar_Baja') {
-      const isObsolete = dto.diagnosis.toLowerCase().includes('obsoleto') || 
-                         dto.diagnosis.toLowerCase().includes('obsolescencia');
+      const isObsolete =
+        dto.diagnosis.toLowerCase().includes('obsoleto') ||
+        dto.diagnosis.toLowerCase().includes('obsolescencia');
       asset.status = isObsolete ? AssetStatus.OBSOLETO : AssetStatus.DANADO;
       await this.assetRepository.save(asset);
     }

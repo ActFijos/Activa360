@@ -36,7 +36,7 @@ export class InitiateBajaController {
   @Get()
   async getBajas() {
     return this.prisma.baja.findMany({
-      orderBy: { initiatedAt: 'desc' }
+      orderBy: { initiatedAt: 'desc' },
     });
   }
 
@@ -44,7 +44,7 @@ export class InitiateBajaController {
   @HttpCode(HttpStatus.OK)
   async approveBaja(@Param('id') id: string) {
     const baja = await this.prisma.baja.findUnique({
-      where: { id }
+      where: { id },
     });
     if (!baja) {
       throw new NotFoundException(`La baja con ID ${id} no existe`);
@@ -52,22 +52,25 @@ export class InitiateBajaController {
 
     await this.prisma.baja.update({
       where: { id },
-      data: { status: 'APROBADA' }
+      data: { status: 'APROBADA' },
     });
 
     await this.prisma.asset.update({
       where: { id: baja.assetId },
-      data: { status: 'Dado_De_Baja' }
+      data: { status: 'Dado_De_Baja' },
     });
 
-    return { success: true, message: 'Baja aprobada y activo retirado de inventarios' };
+    return {
+      success: true,
+      message: 'Baja aprobada y activo retirado de inventarios',
+    };
   }
 
   @Post(':id/rechazar')
   @HttpCode(HttpStatus.OK)
   async rejectBaja(@Param('id') id: string) {
     const baja = await this.prisma.baja.findUnique({
-      where: { id }
+      where: { id },
     });
     if (!baja) {
       throw new NotFoundException(`La baja con ID ${id} no existe`);
@@ -75,24 +78,30 @@ export class InitiateBajaController {
 
     await this.prisma.baja.update({
       where: { id },
-      data: { status: 'RECHAZADA' }
+      data: { status: 'RECHAZADA' },
     });
 
     const lastInspection = await this.prisma.maintenanceReport.findFirst({
       where: { assetId: baja.assetId },
-      orderBy: { inspectedAt: 'desc' }
+      orderBy: { inspectedAt: 'desc' },
     });
 
     let targetStatus = 'Dañado';
-    if (lastInspection && lastInspection.diagnosis.toLowerCase().includes('obsole')) {
+    if (
+      lastInspection &&
+      lastInspection.diagnosis.toLowerCase().includes('obsole')
+    ) {
       targetStatus = 'Obsoleto';
     }
 
     await this.prisma.asset.update({
       where: { id: baja.assetId },
-      data: { status: targetStatus }
+      data: { status: targetStatus },
     });
 
-    return { success: true, message: 'Baja rechazada y activo restaurado a revisión técnica' };
+    return {
+      success: true,
+      message: 'Baja rechazada y activo restaurado a revisión técnica',
+    };
   }
 }

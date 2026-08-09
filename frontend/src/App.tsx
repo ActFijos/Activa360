@@ -12,6 +12,7 @@ import { ConfiguracionUnidades } from './pages/ConfiguracionUnidades';
 import { ConfiguracionEstados } from './pages/ConfiguracionEstados';
 import { ConfiguracionTipos } from './pages/ConfiguracionTipos';
 import { Ayuda } from './pages/Ayuda';
+import { AsistenteIA } from './pages/AsistenteIA';
 
 function App() {
   return (
@@ -30,6 +31,7 @@ function App() {
           <Route path="configuracion/estados" element={<ConfiguracionEstados />} />
           <Route path="configuracion/tipos" element={<ConfiguracionTipos />} />
           <Route path="ayuda" element={<Ayuda />} />
+          <Route path="ayuda/asistente" element={<AsistenteIA />} />
         </Route>
       </Routes>
     </BrowserRouter>

@@ -99,3 +99,18 @@ model MaintenanceReport {
   
   asset         Asset    @relation(fields: [assetId], references: [id], onDelete: Cascade)
 }
+
+// Modelo de Auditoría de Conversaciones con IA
+model AiConversation {
+  id             String   @id @default(uuid())
+  usuarioId      String   @map("usuario_id")
+  pregunta       String
+  respuesta      String
+  toolUtilizada  String?  @map("tool_utilizada")
+  parametrosTool String?  @map("parametros_tool")
+  fecha          DateTime @default(now())
+  duracion       Int      // Duración en milisegundos
+
+  @@map("AI_CONVERSATIONS")
+}
+

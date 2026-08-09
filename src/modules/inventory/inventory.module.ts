@@ -40,7 +40,7 @@ import { UsersController } from './adapters/in/web/users.controller.js';
     AssignAssetController,
     TransferAssetController,
     ReportsStatsController,
-    UsersController
+    UsersController,
   ],
   providers: [
     PrismaService,

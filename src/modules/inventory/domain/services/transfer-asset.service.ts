@@ -1,5 +1,12 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
-import { TransferAssetUseCase, TransferAssetCommand } from '../ports/in/transfer-asset.use-case.js';
+import {
+  Injectable,
+  NotFoundException,
+  ConflictException,
+} from '@nestjs/common';
+import {
+  TransferAssetUseCase,
+  TransferAssetCommand,
+} from '../ports/in/transfer-asset.use-case.js';
 import { TransferRepositoryPort } from '../ports/out/transfer-repository.port.js';
 import { AssetRepositoryPort } from '../ports/out/asset-repository.port.js';
 import { AssignmentRepositoryPort } from '../ports/out/assignment-repository.port.js';
@@ -20,11 +27,16 @@ export class TransferAssetService implements TransferAssetUseCase {
     // 1. Buscar el activo fijo
     const asset = await this.assetRepository.findById(command.assetId);
     if (!asset) {
-      throw new NotFoundException(`El activo con ID ${command.assetId} no existe`);
+      throw new NotFoundException(
+        `El activo con ID ${command.assetId} no existe`,
+      );
     }
 
     // 2. Validar que no esté dado de baja ni en proceso de baja
-    if (asset.status === AssetStatus.DADO_DE_BAJA || asset.status === AssetStatus.EN_PROCESO_BAJA) {
+    if (
+      asset.status === AssetStatus.DADO_DE_BAJA ||
+      asset.status === AssetStatus.EN_PROCESO_BAJA
+    ) {
       throw new ConflictException(
         `No se puede transferir el activo "${asset.name}" porque se encuentra en estado: ${asset.status.replace('_', ' ')}`,
       );
@@ -35,7 +47,9 @@ export class TransferAssetService implements TransferAssetUseCase {
     let fromResponsible = 'Almacén';
 
     const assignments = await this.assignmentRepository.findAll();
-    const assetAssignments = assignments.filter(a => a.assetId === command.assetId);
+    const assetAssignments = assignments.filter(
+      (a) => a.assetId === command.assetId,
+    );
     if (assetAssignments.length > 0) {
       fromResponsible = assetAssignments[0].responsible;
     }

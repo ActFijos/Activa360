@@ -1,5 +1,12 @@
-import { Injectable, ConflictException, BadRequestException } from '@nestjs/common';
-import { RegisterAssetUseCase, RegisterAssetCommand } from '../ports/in/register-asset.use-case.js';
+import {
+  Injectable,
+  ConflictException,
+  BadRequestException,
+} from '@nestjs/common';
+import {
+  RegisterAssetUseCase,
+  RegisterAssetCommand,
+} from '../ports/in/register-asset.use-case.js';
 import { AssetRepositoryPort } from '../ports/out/asset-repository.port.js';
 import { Asset, AssetStatus } from '../models/asset.model.js';
 import { randomUUID } from 'crypto';
@@ -31,13 +38,19 @@ export class RegisterAssetService implements RegisterAssetUseCase {
 
     const now = new Date();
     if (command.purchaseDate > now) {
-      throw new BadRequestException('La fecha de compra no puede ser una fecha futura.');
+      throw new BadRequestException(
+        'La fecha de compra no puede ser una fecha futura.',
+      );
     }
     if (command.entryDate > now) {
-      throw new BadRequestException('La fecha de ingreso no puede ser una fecha futura.');
+      throw new BadRequestException(
+        'La fecha de ingreso no puede ser una fecha futura.',
+      );
     }
     if (command.entryDate < command.purchaseDate) {
-      throw new BadRequestException('La fecha de ingreso no puede ser anterior a la fecha de compra.');
+      throw new BadRequestException(
+        'La fecha de ingreso no puede ser anterior a la fecha de compra.',
+      );
     }
 
     // 3. Instanciar el modelo de dominio con todos los nuevos parámetros
@@ -64,4 +77,3 @@ export class RegisterAssetService implements RegisterAssetUseCase {
     return this.assetRepository.save(asset);
   }
 }
-

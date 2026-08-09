@@ -10,7 +10,7 @@ export interface S3StoragePort {
     bucket: string,
     key: string,
     fileBuffer: Buffer,
-    contentType: string
+    contentType: string,
   ): Promise<string>;
 
   /**
@@ -22,7 +22,7 @@ export interface S3StoragePort {
   getPresignedUrl(
     bucket: string,
     key: string,
-    expiresIn?: number
+    expiresIn?: number,
   ): Promise<string>;
 
   /**

@@ -1,5 +1,9 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { SyncItem, SyncOfflineUseCase, SyncResult } from '../ports/in/sync-offline.use-case';
+import {
+  SyncItem,
+  SyncOfflineUseCase,
+  SyncResult,
+} from '../ports/in/sync-offline.use-case';
 import { AssetRepositoryPort } from '../ports/out/asset-repository.port';
 import { MovementRepositoryPort } from '../ports/out/movement-repository.port';
 import { Asset } from '../models/asset.model';

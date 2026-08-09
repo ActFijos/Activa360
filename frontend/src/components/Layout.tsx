@@ -5,6 +5,7 @@ import { useAuth } from '../keycloak-config';
 export const Layout: React.FC = () => {
   const { username, logout } = useAuth();
   const [isConfigOpen, setIsConfigOpen] = useState(true);
+  const [isAyudaOpen, setIsAyudaOpen] = useState(true);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [notifications, setNotifications] = useState<any[]>([]);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
@@ -157,14 +158,35 @@ export const Layout: React.FC = () => {
               )}
             </li>
             <li>
-              <NavLink to="/ayuda" className={({ isActive }) => `nav-item-link ${isActive ? 'active' : ''}`}>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <circle cx="12" cy="12" r="10" />
-                  <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
-                  <line x1="12" y1="17" x2="12.01" y2="17" />
-                </svg>
-                Ayuda
-              </NavLink>
+              <div 
+                onClick={() => setIsAyudaOpen(!isAyudaOpen)}
+                className="nav-item-link"
+                style={{ cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="10" />
+                    <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+                    <line x1="12" y1="17" x2="12.01" y2="17" />
+                  </svg>
+                  Ayuda
+                </div>
+                <span style={{ fontSize: '0.7rem' }}>{isAyudaOpen ? '▼' : '▶'}</span>
+              </div>
+              {isAyudaOpen && (
+                <ul style={{ listStyle: 'none', paddingLeft: '1.25rem', marginTop: '0.25rem', display: 'flex', flexDirection: 'column', gap: '0.15rem' }}>
+                  <li>
+                    <NavLink to="/ayuda" className={({ isActive }) => `nav-item-link ${isActive ? 'active' : ''}`} end style={{ fontSize: '0.8rem', padding: '0.4rem 0.5rem' }}>
+                      📄 Manuales y FAQs
+                    </NavLink>
+                  </li>
+                  <li>
+                    <NavLink to="/ayuda/asistente" className={({ isActive }) => `nav-item-link ${isActive ? 'active' : ''}`} style={{ fontSize: '0.8rem', padding: '0.4rem 0.5rem' }}>
+                      🤖 Asistente IA
+                    </NavLink>
+                  </li>
+                </ul>
+              )}
             </li>
           </ul>
         </nav>

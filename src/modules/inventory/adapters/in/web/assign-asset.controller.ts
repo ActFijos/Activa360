@@ -1,12 +1,12 @@
-import { 
-  Controller, 
-  Post, 
-  Get, 
-  Body, 
-  HttpCode, 
-  HttpStatus, 
-  UsePipes, 
-  ValidationPipe 
+import {
+  Controller,
+  Post,
+  Get,
+  Body,
+  HttpCode,
+  HttpStatus,
+  UsePipes,
+  ValidationPipe,
 } from '@nestjs/common';
 import { AssignAssetUseCase } from '../../../domain/ports/in/assign-asset.use-case.js';
 import { AssignmentRepositoryPort } from '../../../domain/ports/out/assignment-repository.port.js';
@@ -47,10 +47,26 @@ export class AssignAssetController {
     if (users.length === 0) {
       // Fallback a personal UMSS realista si no hay cargados en la tabla
       return [
-        { id: 'u1', fullName: 'Ing. Carlos Pérez (Director TI)', role: 'Supervisor' },
-        { id: 'u2', fullName: 'Dra. Ana María Gómez (Decana)', role: 'Supervisor' },
-        { id: 'u3', fullName: 'Lic. Ramiro Mendoza (Encargado Almacén)', role: 'Supervisor' },
-        { id: 'u4', fullName: 'Ing. Sonia Rojas (Jefe Administrativo)', role: 'Supervisor' },
+        {
+          id: 'u1',
+          fullName: 'Ing. Carlos Pérez (Director TI)',
+          role: 'Supervisor',
+        },
+        {
+          id: 'u2',
+          fullName: 'Dra. Ana María Gómez (Decana)',
+          role: 'Supervisor',
+        },
+        {
+          id: 'u3',
+          fullName: 'Lic. Ramiro Mendoza (Encargado Almacén)',
+          role: 'Supervisor',
+        },
+        {
+          id: 'u4',
+          fullName: 'Ing. Sonia Rojas (Jefe Administrativo)',
+          role: 'Supervisor',
+        },
       ];
     }
     return users;

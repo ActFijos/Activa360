@@ -1,11 +1,22 @@
-import { IsNotEmpty, IsString, IsInt, IsNumber, Min, IsOptional, Matches, IsDateString, IsIn } from 'class-validator';
+import {
+  IsNotEmpty,
+  IsString,
+  IsInt,
+  IsNumber,
+  Min,
+  IsOptional,
+  Matches,
+  IsDateString,
+  IsIn,
+} from 'class-validator';
 import { AssetStatus } from '../../../../domain/models/asset.model.js';
 
 export class RegisterAssetDto {
   @IsString()
   @IsNotEmpty()
   @Matches(/^(ACT|QR)-[a-zA-Z0-9-]+$/, {
-    message: 'El código QR debe comenzar con "ACT-" o "QR-" seguido de caracteres alfanuméricos y guiones (ej. ACT-2026-001 o QR-123)',
+    message:
+      'El código QR debe comenzar con "ACT-" o "QR-" seguido de caracteres alfanuméricos y guiones (ej. ACT-2026-001 o QR-123)',
   })
   qrCode: string;
 
@@ -36,16 +47,30 @@ export class RegisterAssetDto {
   @IsNotEmpty()
   origin: string;
 
-  @IsDateString({}, { message: 'La fecha de compra debe tener un formato de fecha válido (ISO 8601)' })
+  @IsDateString(
+    {},
+    {
+      message:
+        'La fecha de compra debe tener un formato de fecha válido (ISO 8601)',
+    },
+  )
   @IsNotEmpty()
   purchaseDate: string;
 
-  @IsDateString({}, { message: 'La fecha de ingreso debe tener un formato de fecha válido (ISO 8601)' })
+  @IsDateString(
+    {},
+    {
+      message:
+        'La fecha de ingreso debe tener un formato de fecha válido (ISO 8601)',
+    },
+  )
   @IsNotEmpty()
   entryDate: string;
 
   @IsNumber()
-  @Min(0.01, { message: 'El valor de compra debe ser un número positivo mayor que cero' })
+  @Min(0.01, {
+    message: 'El valor de compra debe ser un número positivo mayor que cero',
+  })
   @IsNotEmpty()
   purchaseValue: number;
 
@@ -66,4 +91,3 @@ export class RegisterAssetDto {
   @IsOptional()
   providerPhone?: string;
 }
-
