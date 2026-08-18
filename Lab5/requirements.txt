@@ -1,0 +1,8 @@
+chromadb
+openai
+pydantic
+python-dotenv
+httpx
+fastapi
+uvicorn
+mcp>=1,<3

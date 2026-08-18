@@ -1,0 +1,36 @@
+{
+  "PED-2026-0117": {
+    "cliente": "Ana Rocha",
+    "producto": "Auriculares inalambricos NX-200",
+    "estado": "CANCELADO",
+    "fecha_compra": "2026-08-08",
+    "fecha_entrega": null,
+    "monto": 340.0,
+    "motivo_cancelacion": "",
+    "fecha_cancelacion": "2026-08-12"
+  },
+  "PED-2026-0203": {
+    "cliente": "Jorge Villca",
+    "producto": "Teclado mecanico K87",
+    "estado": "DESPACHADO",
+    "fecha_compra": "2026-08-05",
+    "fecha_entrega": null,
+    "monto": 520.0
+  },
+  "PED-2026-0042": {
+    "cliente": "Maria Fernandez",
+    "producto": "Notebook Aero 14",
+    "estado": "ENTREGADO",
+    "fecha_compra": "2026-07-20",
+    "fecha_entrega": "2026-07-24",
+    "monto": 7800.0
+  },
+  "PED-2026-0158": {
+    "cliente": "Carla Mamani",
+    "producto": "Monitor 27 QHD",
+    "estado": "RECIBIDO",
+    "fecha_compra": "2026-08-10",
+    "fecha_entrega": null,
+    "monto": 1950.0
+  }
+}
