@@ -185,6 +185,11 @@ export const Layout: React.FC = () => {
                       🤖 Asistente IA
                     </NavLink>
                   </li>
+                  <li>
+                    <NavLink to="/ayuda/agente-mcp" className={({ isActive }) => `nav-item-link ${isActive ? 'active' : ''}`} style={{ fontSize: '0.8rem', padding: '0.4rem 0.5rem' }}>
+                      🧠 Agente Avanzado (MCP)
+                    </NavLink>
+                  </li>
                 </ul>
               )}
             </li>

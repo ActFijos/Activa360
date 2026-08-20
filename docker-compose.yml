@@ -59,7 +59,17 @@ services:
     volumes:
       - rustfs_data:/data
 
+  # Base de datos Vectorial Chroma
+  chroma:
+    image: chromadb/chroma:latest
+    container_name: activa360-chroma
+    ports:
+      - "8000:8000"
+    volumes:
+      - chroma_data:/chroma/data
+
 volumes:
   postgres_data:
   redis_data:
   rustfs_data:
+  chroma_data:

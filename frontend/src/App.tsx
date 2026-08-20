@@ -13,6 +13,7 @@ import { ConfiguracionEstados } from './pages/ConfiguracionEstados';
 import { ConfiguracionTipos } from './pages/ConfiguracionTipos';
 import { Ayuda } from './pages/Ayuda';
 import { AsistenteIA } from './pages/AsistenteIA';
+import { AgenteMcp } from './pages/AgenteMcp';
 
 function App() {
   return (
@@ -32,6 +33,7 @@ function App() {
           <Route path="configuracion/tipos" element={<ConfiguracionTipos />} />
           <Route path="ayuda" element={<Ayuda />} />
           <Route path="ayuda/asistente" element={<AsistenteIA />} />
+          <Route path="ayuda/agente-mcp" element={<AgenteMcp />} />
         </Route>
       </Routes>
     </BrowserRouter>
