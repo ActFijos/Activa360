@@ -1,0 +1,6 @@
+%% Diagrama de Componentes C4 (Nivel 3) - Sync Service de Activa360
+flowchart LR
+  A[Sync Controller] --> B[Conflict Resolution Service]
+  B --> C[Asset Domain Service]
+  C --> D[(Asset Repository)]
+  B --> E[(Redis Queue)]

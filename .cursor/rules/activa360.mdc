@@ -1,0 +1,32 @@
+---
+description: Implementa un Caso de Uso (FSD-UC-XXX) para el backend de Activa360 usando Arquitectura Hexagonal.
+globs: src/**/*.ts
+---
+# Skill: Implementar Caso de Uso Backend Activa360
+
+## Cuándo activarlo (triggers)
+- **ARRANCA cuando**: El usuario te solicita implementar un caso de uso específico mencionando el ID (ej. "Implementa FSD-UC-001").
+
+## Entradas obligatorias
+- El ID del caso de uso (ej. `FSD-UC-001`).
+- Acceso de lectura al archivo `docs/fsd/FSD_vFinal.md`.
+
+## Procedimiento
+1. **Verificar**: Lee el FSD_vFinal.md, localiza el ID del caso de uso, el prompt-contrato y las reglas de negocio.
+2. **Mapear Arquitectura**: Todo el código debe ir a la estructura hexagonal (ej. `src/modules/inventory/adapters/in/web`).
+3. **Implementar**: Escribe el código. NO inventes columnas que no estén en el diccionario de datos. NO inventes pasos del flujo que no estén en el FSD.
+4. **Testing**: Escribe un archivo `.spec.ts` de Jest que cubra obligatoriamente los Criterios de Aceptación Gherkin definidos en el FSD.
+
+## Salida esperada
+- Archivos `.ts` creados o modificados.
+- Imprime una **Tabla de Trazabilidad** (FSD / BR ID -> Archivo de implementación).
+
+## Verificación
+- El Controller expone la ruta REST exacta y valida el DTO de entrada.
+- El repositorio usa la entidad correcta mapeada a PostgreSQL.
+
+## Anti-patrones específicos a evitar
+- Mezclar llamadas a la base de datos (TypeORM/Prisma) dentro del Controller. Toda validación de negocio debe vivir en un Servicio (UseCase).
+- Ignorar el manejo de fechas para la sincronización offline.
+- Hardcodear contraseñas, URLs de base de datos.
+- **Acoplamiento entre módulos**: Prohibido que la capa `domain` de un módulo importe código de la capa `adapters` de otro. La comunicación entre módulos distintos debe hacerse únicamente a través de eventos (NestJS EventEmitter) o puertos públicos expuestos, nunca inyectando repositorios de base de datos directamente entre módulos.

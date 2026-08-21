@@ -1,0 +1,116 @@
+datasource db {
+  provider = "postgresql"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// Modelo de Bajas SABS (Módulo Compliance)
+model Baja {
+  id            String   @id @default(uuid())
+  assetId       String   @unique
+  jefeId        String
+  justification String
+  evidence      String
+  initiatedAt   DateTime @default(now())
+  status        String   @default("Iniciada")
+}
+
+// Modelo de Activo Fijo (Módulo Inventario)
+model Asset {
+  id              String   @id @default(uuid())
+  qrCode          String   @unique
+  name            String   // Descripción detallada, marca, modelo, serie
+  status          String   // Nuevo, Asignado, Dañado, Obsoleto, etc.
+  location        String
+  updatedAt       DateTime @updatedAt
+
+  // Campos adicionales Datos del Activo (image3.png)
+  category        String
+  usefulLife      Int?     // Opcional en el mockup
+  origin          String   // Compra, Donación, etc.
+  purchaseDate    DateTime
+  entryDate       DateTime // Fecha de ingreso Unidad/Almacén
+  purchaseValue   Float    // Valor de adquisición ($us)
+  warrantyMonths  Int?     // Opcional en el mockup
+
+  // Datos del Proveedor (Paso 2)
+  providerName    String?
+  providerNit     String?
+  providerPhone   String?
+
+  movements       Movement[]
+  maintenances    MaintenanceReport[]
+}
+
+// Modelo de Geolocalización y Escaneo (Historial de ubicaciones)
+model Movement {
+  id        String   @id @default(uuid())
+  assetId   String
+  latitude  Float
+  longitude Float
+  scannedAt DateTime @default(now())
+  asset     Asset    @relation(fields: [assetId], references: [id], onDelete: Cascade)
+}
+
+// Modelo de Transferencias de Activos
+model Transfer {
+  id              String   @id @default(uuid())
+  assetId         String
+  fromUnit        String
+  fromResponsible String
+  toUnit          String
+  toResponsible   String
+  date            DateTime @default(now())
+  status          String   // Aprobada, Pendiente, Rechazada
+  reason          String
+}
+
+// Modelo de Asignaciones de Activos a responsables
+model Assignment {
+  id           String   @id @default(uuid())
+  assetId      String
+  responsible  String
+  date         DateTime @default(now())
+  destination  String
+  observations String?
+}
+
+// Modelo de Usuarios del Sistema local
+model User {
+  id       String  @id @default(uuid())
+  fullName String
+  ci       String  @unique
+  phone    String
+  role     String  // Administrador, Supervisor, Inventariador
+  username String  @unique
+  cargo    String? // Cargo del usuario (Ej: Administrador de Sistemas)
+  password String? // Contraseña del usuario
+}
+
+model MaintenanceReport {
+  id            String   @id @default(uuid())
+  assetId       String
+  diagnosis     String   // Detalle técnico de la falla
+  estimatedCost Float    // Costo estimado de reparación
+  action        String   // "Reparar" o "Recomendar_Baja"
+  inspectedAt   DateTime @default(now())
+  
+  asset         Asset    @relation(fields: [assetId], references: [id], onDelete: Cascade)
+}
+
+// Modelo de Auditoría de Conversaciones con IA
+model AiConversation {
+  id             String   @id @default(uuid())
+  usuarioId      String   @map("usuario_id")
+  pregunta       String
+  respuesta      String
+  toolUtilizada  String?  @map("tool_utilizada")
+  parametrosTool String?  @map("parametros_tool")
+  fecha          DateTime @default(now())
+  duracion       Int      // Duración en milisegundos
+
+  @@map("AI_CONVERSATIONS")
+}
+

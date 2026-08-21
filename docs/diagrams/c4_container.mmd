@@ -1,0 +1,28 @@
+%% Diagrama de Contenedores C4 (Nivel 2) - Activa360
+C4Container
+  title Diagrama de Contenedores – Activa360
+
+  Person(inventariador, "Inventariador", "App offline")
+  Person(jefe, "Jefe Activos", "Dashboard Web")
+
+  Container(mobile, "Mobile App", "React Native", "Funciona offline con SQLite local")
+  Container(web, "Web App", "React SPA", "Panel de administración")
+  
+  Container(api_gateway, "API Gateway", "NestJS", "Enruta peticiones y valida JWT")
+  Container(sync_service, "Sync Service", "NestJS", "Resuelve conflictos de sincronización offline")
+  Container(core_service, "Core Assets Service", "NestJS", "Lógica de activos y SABS")
+  
+  ContainerDb(db, "Base de datos principal", "PostgreSQL", "Almacena activos, bajas, historiales")
+  ContainerDb(cache, "Caché / Message Broker", "Redis", "Colas para sincronización")
+
+  Rel(inventariador, mobile, "Usa")
+  Rel(jefe, web, "Usa")
+  Rel(mobile, api_gateway, "Sincroniza vía REST (JSON)")
+  Rel(web, api_gateway, "Solicita datos vía REST")
+  
+  Rel(api_gateway, core_service, "Rutea a")
+  Rel(api_gateway, sync_service, "Envía lotes a")
+  
+  Rel(sync_service, cache, "Encola jobs")
+  Rel(sync_service, db, "Aplica cambios reconciliados")
+  Rel(core_service, db, "Lee/Escribe")

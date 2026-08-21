@@ -1,0 +1,30 @@
+
+================================================================================
+                    UNIVERSIDAD MAYOR DE SAN SIMÓN (UMSS)
+                 ACTA OFICIAL DE BAJA DE ACTIVOS FIJOS (SABS)
+================================================================================
+FECHA DE EMISIÓN : 27/05/2026
+ACTIVO ID        : ACT-482
+CÓDIGO SABS      : SABS-1014-UMSS-0042
+CÓDIGO QR        : QR-UMSS-2026-0482
+--------------------------------------------------------------------------------
+DESCRIPCIÓN DEL BIEN:
+👉 Nombre : Servidor Rack de Cómputo Central Sun Microsystems
+👉 Estado Físico Inicial : Dañado Obsoleto
+--------------------------------------------------------------------------------
+MOTIVO DE LA SOLICITUD DE BAJA:
+"Desgaste tecnológico severo y fallas físicas irreparables de placa base."
+--------------------------------------------------------------------------------
+FIRMAS DE RESPONSABILIDAD INSTITUCIONAL:
+
+     [ FIRMADO DIGITALMENTE ]                   [ FIRMADO DIGITALMENTE ]
+  ................................            ................................
+    Ing. Roger Valenzuela                       Dr. Armando Ríos
+     CUSTODIO SOLICITANTE                        MAE / AUTORIZADOR FINAL
+     CI: 3844882-Cbba                            CI: 104842-Cbba
+--------------------------------------------------------------------------------
+VERIFICACIÓN DE SEGURIDAD Y AUDITORÍA:
+Este documento cuenta con paridad física e inmutabilidad en la nube de Activa360.
+================================================================================
+HASH DE AUDITORÍA : SHA-256:c95a248c7a11ea036a48157c4684264ffb56c5a3d5e762d5c6da3922bcaf498b
+================================================================================

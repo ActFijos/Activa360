@@ -1,0 +1,41 @@
+%% Diagrama de Modelo de Dominio de Clases - Activa360
+classDiagram
+    class Activo {
+        +String id
+        +String codigoQR
+        +String nombre
+        +String estadoFisico
+        +CoordenadasGPS ubicacionGPS
+        +String status
+        +DateTime fechaIngreso
+        +DateTime updatedAt
+        +asignarCustodio(custodioId)
+        +solicitarBaja(motivo)
+    }
+    class Movimiento {
+        +String id
+        +String activoId
+        +String custodioIdOrigen
+        +String custodioIdDestino
+        +DateTime fecha
+        +String tipo
+    }
+    class Custodio {
+        +String id
+        +String nombre
+        +String cargo
+        +String departamento
+    }
+    class Baja {
+        +String id
+        +String activoId
+        +String motivo
+        +String actaPdfUrl
+        +String status
+        +DateTime fechaSolicitud
+        +DateTime fechaAprobacion
+    }
+    Activo "1" *-- "many" Movimiento : registra
+    Activo "many" --> "1" Custodio : pertenece_a
+    Activo "1" -- "0..1" Baja : tiene
+    Movimiento "many" --> "2" Custodio : involucra

@@ -1,0 +1,16 @@
+pptx_env/
+.*.swp
+.~lock.*
+*.log
+__pycache__/
+
+# Node / NestJS dependencies and build outputs
+node_modules/
+dist/
+.env
+.env.*
+.nest/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
