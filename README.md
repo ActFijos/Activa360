@@ -1,98 +1,132 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# Activa360 — Sistema de Control de Activos Fijos (SCAF)
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+Activa360 es una plataforma empresarial moderna para la gestión, control, trazabilidad, inspección y baja de activos fijos de la Universidad Mayor de San Simón (UMSS). Diseñada bajo **Arquitectura Hexagonal** en el backend y una interfaz de usuario fluida y reactiva en el frontend.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+---
 
-## Description
+## 🚀 Arquitectura y Tecnologías
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+### Backend (Directorio Raíz)
+* **Framework:** NestJS (Node.js)
+* **Base de Datos:** PostgreSQL (con Prisma ORM, mapeado sobre el esquema `app`)
+* **Autenticación:** Keycloak (OAuth2 / OpenID Connect)
+* **Base de Datos Vectorial (RAG):** Chroma DB (ejecutándose en contenedor Docker)
+* **IA & Orquestación:** Servidor MCP (Model Context Protocol) integrado para consulta segura de activos fijos y manuales.
 
-## Project setup
+### Frontend (`/frontend`)
+* **Framework:** React con Vite y TypeScript
+* **Diseño:** CSS modular premium con soporte para modo oscuro
+* **Seguridad:** Keycloak JS Adapter integrado
 
-```bash
-$ npm install
+---
+
+## 🛠️ Requisitos Previos
+
+Asegúrate de tener instalados los siguientes componentes en tu entorno local:
+1. **Node.js** (Versión 18 o superior) y **npm**
+2. **Docker Desktop** (para los contenedores de PostgreSQL, Keycloak y Chroma DB)
+3. **Git**
+
+---
+
+## ⚙️ Configuración y Variables de Entorno
+
+### 1. Variables de Backend (Archivo `.env` en la raíz)
+Crea o edita el archivo `.env` en el directorio raíz del proyecto con la siguiente configuración:
+
+```env
+DATABASE_URL="postgresql://postgres:postgres@localhost:5432/activa360?schema=app"
+KEYCLOAK_AUTH_SERVER_URL="http://localhost:8080"
+KEYCLOAK_REALM="activa360"
+KEYCLOAK_CLIENT_ID="activa360-backend"
+KEYCLOAK_CLIENT_SECRET="tu_client_secret_aquí"
+
+# API Key para el Asistente IA (Opcional, si no se define opera en modo Offline Local)
+GEMINI_API_KEY="tu_api_key_de_gemini"
+CHROMA_URL="http://localhost:8000"
 ```
 
-## Compile and run the project
+### 2. Variables de Frontend (Archivo `frontend/.env`)
+Crea o edita el archivo `.env` dentro del directorio `frontend/`:
 
-```bash
-# development
-$ npm run start
-
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
+```env
+VITE_KEYCLOAK_URL=http://localhost:8080
+VITE_KEYCLOAK_REALM=activa360
+VITE_KEYCLOAK_CLIENT_ID=activa360-frontend
+VITE_API_URL=http://localhost:3000
 ```
 
-## Run tests
+---
+
+## 📦 Instrucciones para Correr el Sistema
+
+Sigue estos pasos en orden para levantar la aplicación completa:
+
+### Paso 1: Levantar la Infraestructura Docker (Base de Datos + Keycloak + Chroma)
+Desde el directorio raíz del proyecto, ejecuta:
+```bash
+docker-compose up -d
+```
+*Esto iniciará los contenedores de PostgreSQL (puerto `5432`), Keycloak (puerto `8080`) y Chroma DB (puerto `8000`).*
+
+### Paso 2: Configurar la Base de Datos (Migraciones y Semilla de Datos)
+Instala las dependencias del backend, ejecuta las migraciones de Prisma para crear las tablas en el esquema `app` y siembra los datos iniciales de prueba (usuarios, activos, asignaciones, bajas y transferencias):
 
 ```bash
-# unit tests
-$ npm run test
+# 1. Instalar dependencias del backend
+npm install
 
-# e2e tests
-$ npm run test:e2e
+# 2. Ejecutar las migraciones de base de datos
+npx prisma migrate dev
 
-# test coverage
-$ npm run test:cov
+# 3. Cargar la semilla de datos (Seed)
+npx prisma db seed
 ```
 
-## Deployment
-
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
-
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
-
+### Paso 3: Iniciar el Backend (NestJS)
+Para arrancar el servidor del backend en modo desarrollo con recarga automática:
 ```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
+npm run start:dev
 ```
+*El backend se levantará en [http://localhost:3000](http://localhost:3000).*
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+### Paso 4: Iniciar el Frontend (React + Vite)
+Abre otra terminal y navega al directorio del frontend para instalar sus dependencias y levantar el servidor web:
+```bash
+# 1. Ir a la carpeta frontend
+cd frontend
 
-## Resources
+# 2. Instalar dependencias
+npm install
 
-Check out a few resources that may come in handy when working with NestJS:
+# 3. Arrancar servidor de desarrollo
+npm run dev
+```
+*El frontend estará disponible en [http://localhost:5173](http://localhost:5173).*
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+---
 
-## Support
+## 🧠 Agente de Asistencia Inteligente Avanzada (MCP + Chroma RAG)
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+El sistema cuenta con un **Agente IA Avanzado** accesible en el panel lateral a través de la ruta `/ayuda/agente-mcp`. Este agente se comunica con el backend NestJS a través de endpoints seguros y ofrece respuestas automáticas sobre:
 
-## Stay in touch
+* **Búsquedas de Activos**: Permite filtrar y listar activos por categoría, ubicación, código QR y descripción.
+* **Historial e Ingesta de Bajas**: Detalla la trazabilidad y autorizaciones del catálogo institucional de bajas.
+* **Consulta Documental (RAG)**: Indexa semánticamente y responde preguntas basándose en el Manual de Usuario de Activa360 (`docs/manual_scaf.md`).
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+### Modos de Operación:
+1. **Modo Online (Recomendado):** Si configuras `GEMINI_API_KEY` en tu `.env`, el agente utilizará embeddings vectoriales en Chroma DB y el modelo Gemini para redactar respuestas contextuales fluidas y precisas.
+2. **Modo Offline (Respaldo Local):** Si no se define una clave API de Gemini, el asistente se adaptará automáticamente a una lógica local offline de búsqueda por palabras clave mejorada con boost temático, permitiendo resolver consultas documentales y bases de datos locales sin costos de API externos.
 
-## License
+---
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+## 📋 Comandos de Prueba (Testing)
+
+Para correr la suite de pruebas unitarias y de integración del backend:
+```bash
+# Correr tests unitarios
+npm run test
+
+# Correr tests con cobertura
+npm run test:cov
+```
