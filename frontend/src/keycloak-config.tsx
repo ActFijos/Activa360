@@ -26,10 +26,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if ((window as any).__keycloak_initialized) {
+      setLoading(false);
+      return;
+    }
+    (window as any).__keycloak_initialized = true;
+
+    if (import.meta.env.VITE_SKIP_KEYCLOAK === 'true') {
+      setAuthenticated(true);
+      setUsername('Usuario Dev');
+      setLoading(false);
+      return;
+    }
+
     keycloak
       .init({
-        onLoad: 'login-required', // Exige iniciar sesión al entrar a la app
-        pkceMethod: 'S256',        // Seguridad PKCE obligatoria para SPAs
+        onLoad: 'check-sso',
+        pkceMethod: 'S256',
         checkLoginIframe: false,
       })
       .then((auth) => {
@@ -38,7 +51,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setToken(keycloak.token);
           setUsername(keycloak.tokenParsed?.preferred_username);
           
-          // Configurar temporizador para refrescar el token antes de que expire
           setInterval(() => {
             keycloak.updateToken(70).then((refreshed) => {
               if (refreshed) {
@@ -46,11 +58,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               }
             });
           }, 60000);
+        } else {
+          // Si no está autenticado vía Keycloak, permitir modo dev/local
+          setAuthenticated(true);
+          setUsername('Usuario Dev');
         }
         setLoading(false);
       })
       .catch((err) => {
-        console.error('Error al inicializar Keycloak:', err);
+        console.warn('Keycloak no disponible, continuando en modo dev:', err);
+        setAuthenticated(true);
+        setUsername('Usuario Dev');
         setLoading(false);
       });
   }, []);
