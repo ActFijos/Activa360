@@ -1,5 +1,6 @@
 import {
   Injectable,
+  Inject,
   NotFoundException,
   ConflictException,
 } from '@nestjs/common';
@@ -12,8 +13,8 @@ import { randomUUID } from 'crypto';
 @Injectable()
 export class InitiateBajaService implements InitiateBajaUseCase {
   constructor(
-    private readonly bajaRepository: BajaRepositoryPort,
-    private readonly assetService: AssetServicePort,
+    @Inject(BajaRepositoryPort) private readonly bajaRepository: BajaRepositoryPort,
+    @Inject(AssetServicePort) private readonly assetService: AssetServicePort,
   ) {}
 
   async execute(

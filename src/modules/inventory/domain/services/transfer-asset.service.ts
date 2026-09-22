@@ -6,13 +6,13 @@ import {
 import {
   TransferAssetUseCase,
   TransferAssetCommand,
-} from '../ports/in/transfer-asset.use-case.js';
-import { TransferRepositoryPort } from '../ports/out/transfer-repository.port.js';
-import { AssetRepositoryPort } from '../ports/out/asset-repository.port.js';
-import { AssignmentRepositoryPort } from '../ports/out/assignment-repository.port.js';
-import { Transfer } from '../models/transfer.model.js';
-import { Assignment } from '../models/assignment.model.js';
-import { AssetStatus } from '../models/asset.model.js';
+} from '../ports/in/transfer-asset.use-case';
+import { TransferRepositoryPort } from '../ports/out/transfer-repository.port';
+import { AssetRepositoryPort } from '../ports/out/asset-repository.port';
+import { AssignmentRepositoryPort } from '../ports/out/assignment-repository.port';
+import { Transfer } from '../models/transfer.model';
+import { Assignment } from '../models/assignment.model';
+import { AssetStatus } from '../models/asset.model';
 import { randomUUID } from 'crypto';
 
 @Injectable()

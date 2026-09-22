@@ -6,11 +6,11 @@ import {
 import {
   AssignAssetUseCase,
   AssignAssetCommand,
-} from '../ports/in/assign-asset.use-case.js';
-import { AssignmentRepositoryPort } from '../ports/out/assignment-repository.port.js';
-import { AssetRepositoryPort } from '../ports/out/asset-repository.port.js';
-import { Assignment } from '../models/assignment.model.js';
-import { AssetStatus } from '../models/asset.model.js';
+} from '../ports/in/assign-asset.use-case';
+import { AssignmentRepositoryPort } from '../ports/out/assignment-repository.port';
+import { AssetRepositoryPort } from '../ports/out/asset-repository.port';
+import { Assignment } from '../models/assignment.model';
+import { AssetStatus } from '../models/asset.model';
 import { randomUUID } from 'crypto';
 
 @Injectable()

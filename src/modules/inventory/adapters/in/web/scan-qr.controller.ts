@@ -6,6 +6,7 @@ import {
   HttpStatus,
   UsePipes,
   ValidationPipe,
+  Inject,
 } from '@nestjs/common';
 import { ScanQrUseCase } from '../../../domain/ports/in/scan-qr.use-case';
 import { ScanQrDto } from './dto/scan-qr.dto';
@@ -15,8 +16,8 @@ import { SyncOfflineDto } from './dto/sync-offline.dto';
 @Controller('activos')
 export class ScanQrController {
   constructor(
-    private readonly scanQrUseCase: ScanQrUseCase,
-    private readonly syncOfflineUseCase: SyncOfflineUseCase,
+    @Inject(ScanQrUseCase) private readonly scanQrUseCase: ScanQrUseCase,
+    @Inject(SyncOfflineUseCase) private readonly syncOfflineUseCase: SyncOfflineUseCase,
   ) {}
 
   @Post('qr')

@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { InitiateBajaController } from './initiate-baja.controller';
 import { InitiateBajaUseCase } from '../../../domain/ports/in/initiate-baja.use-case';
 import { Baja, BajaStatus } from '../../../domain/models/baja.model';
+import { PrismaService } from '../../out/db/prisma.service';
 
 describe('InitiateBajaController', () => {
   let controller: InitiateBajaController;
@@ -18,6 +19,22 @@ describe('InitiateBajaController', () => {
         {
           provide: InitiateBajaUseCase,
           useValue: fakeInitiateBajaUseCase,
+        },
+        {
+          provide: PrismaService,
+          useValue: {
+            baja: {
+              findMany: jest.fn(),
+              findUnique: jest.fn(),
+              update: jest.fn(),
+            },
+            asset: {
+              update: jest.fn(),
+            },
+            maintenanceReport: {
+              findFirst: jest.fn(),
+            },
+          },
         },
       ],
     }).compile();

@@ -1,5 +1,6 @@
 import {
   Injectable,
+  Inject,
   NotFoundException,
   ConflictException,
 } from '@nestjs/common';
@@ -13,8 +14,8 @@ import { randomUUID } from 'crypto';
 @Injectable()
 export class ScanQrService implements ScanQrUseCase {
   constructor(
-    private readonly assetRepository: AssetRepositoryPort,
-    private readonly movementRepository: MovementRepositoryPort,
+    @Inject(AssetRepositoryPort) private readonly assetRepository: AssetRepositoryPort,
+    @Inject(MovementRepositoryPort) private readonly movementRepository: MovementRepositoryPort,
   ) {}
 
   async execute(

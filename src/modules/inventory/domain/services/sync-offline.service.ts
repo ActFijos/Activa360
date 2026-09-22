@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, Inject, NotFoundException } from '@nestjs/common';
 import {
   SyncItem,
   SyncOfflineUseCase,
@@ -13,8 +13,8 @@ import { randomUUID } from 'crypto';
 @Injectable()
 export class SyncOfflineService implements SyncOfflineUseCase {
   constructor(
-    private readonly assetRepository: AssetRepositoryPort,
-    private readonly movementRepository: MovementRepositoryPort,
+    @Inject(AssetRepositoryPort) private readonly assetRepository: AssetRepositoryPort,
+    @Inject(MovementRepositoryPort) private readonly movementRepository: MovementRepositoryPort,
   ) {}
 
   async execute(items: SyncItem[]): Promise<SyncResult> {

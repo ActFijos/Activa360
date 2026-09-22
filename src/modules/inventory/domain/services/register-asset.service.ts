@@ -6,9 +6,9 @@ import {
 import {
   RegisterAssetUseCase,
   RegisterAssetCommand,
-} from '../ports/in/register-asset.use-case.js';
-import { AssetRepositoryPort } from '../ports/out/asset-repository.port.js';
-import { Asset, AssetStatus } from '../models/asset.model.js';
+} from '../ports/in/register-asset.use-case';
+import { AssetRepositoryPort } from '../ports/out/asset-repository.port';
+import { Asset, AssetStatus } from '../models/asset.model';
 import { randomUUID } from 'crypto';
 
 @Injectable()

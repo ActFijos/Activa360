@@ -9,16 +9,17 @@ import {
   UsePipes,
   ValidationPipe,
   NotFoundException,
+  Inject,
 } from '@nestjs/common';
 import { InitiateBajaUseCase } from '../../../domain/ports/in/initiate-baja.use-case';
 import { InitiateBajaDto } from './dto/initiate-baja.dto';
-import { PrismaService } from '../../out/db/prisma.service.js';
+import { PrismaService } from '../../out/db/prisma.service';
 
 @Controller('bajas')
 export class InitiateBajaController {
   constructor(
-    private readonly initiateBajaUseCase: InitiateBajaUseCase,
-    private readonly prisma: PrismaService,
+    @Inject(InitiateBajaUseCase) private readonly initiateBajaUseCase: InitiateBajaUseCase,
+    @Inject(PrismaService) private readonly prisma: PrismaService,
   ) {}
 
   @Post()

@@ -208,7 +208,7 @@ export class ChromaRagService implements OnModuleInit {
       const queryWords = query.toLowerCase()
         .replace(/[?¿!¡.,]/g, '')
         .split(/\s+/)
-        .filter(w => w.length > 2);
+        .filter(w => w.length > 2 && !['activos', 'activo', 'sistema', 'sistemas', 'fijos', 'fijo', 'umss', 'como', 'cómo', 'cual', 'cuál', 'para', 'este', 'esta', 'del', 'los', 'las', 'unos', 'unas', 'con'].includes(w));
 
       for (const section of sections) {
         if (!section.trim()) continue;
@@ -248,7 +248,9 @@ export class ChromaRagService implements OnModuleInit {
           score += 5;
         }
 
-        if (score > 0) {
+        // Exigir al menos 2 coincidencias de palabras clave si la consulta es larga, o 1 si es una sola palabra
+        const minScore = queryWords.length > 1 ? 2 : 1;
+        if (score >= minScore) {
           results.push({
             contenido: section.trim(),
             metadata: {

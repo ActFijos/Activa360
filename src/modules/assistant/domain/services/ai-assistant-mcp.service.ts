@@ -96,7 +96,10 @@ export class AiAssistantMcpService implements AiAssistantMcpUseCase {
       }
 
       // 4. Formatear respuesta final en lenguaje natural
-      if (apiKey && !toolResult.error) {
+      const isEmptyRag = decidedToolCall.name === 'search_knowledge_base' && 
+                        (Array.isArray(toolResult) && toolResult.length === 0);
+
+      if (apiKey && !toolResult.error && !isEmptyRag) {
         responseText = await this.callGeminiForResponseGeneration(
           dto.pregunta,
           decidedToolCall.name,
@@ -114,7 +117,10 @@ export class AiAssistantMcpService implements AiAssistantMcpUseCase {
 
     } catch (error: any) {
       console.error('Error en Agente IA MCP:', error);
-      responseText = `Ocurrió un error en el Agente MCP: ${error.message}`;
+      responseText = `Lo siento, no se pudo completar la consulta en este momento debido a un inconveniente técnico.\n\n` +
+        `**Sugerencias:**\n` +
+        `- Asegúrate de que los contenedores de Docker (PostgreSQL, Chroma) y el servidor NestJS estén iniciados.\n` +
+        `- Refresca la página y vuelve a intentar tu consulta en unos instantes.`;
     } finally {
       // 5. Registro de Auditoría
       const duration = Date.now() - startTime;
@@ -159,8 +165,45 @@ export class AiAssistantMcpService implements AiAssistantMcpUseCase {
       where.category = { contains: args.category, mode: 'insensitive' };
     }
     if (args.status) {
-      where.status = { contains: args.status, mode: 'insensitive' };
+      if (args.status === 'Baja') {
+        const bajas = await this.prisma.baja.findMany({});
+        const assetIds = bajas.map(b => b.assetId);
+        
+        // Quitar la búsqueda por descripción del activo para listar todos los dados de baja
+        delete where.name;
+        
+        if (where.id) {
+          const allowedIds = where.id.in.filter((id: string) => assetIds.includes(id));
+          where.id = { in: allowedIds };
+        } else {
+          where.id = { in: assetIds };
+        }
+
+        const assets = await this.prisma.asset.findMany({
+          where,
+          take: 15
+        });
+
+        // Combinar datos del activo con su registro de baja
+        const assetsWithBaja = assets.map(a => {
+          const b = bajas.find(bj => bj.assetId === a.id);
+          return {
+            id: a.id,
+            qrCode: a.qrCode,
+            name: a.name,
+            status: a.status,
+            location: a.location,
+            bajaStatus: b?.status || 'Iniciada',
+            justification: b?.justification || ''
+          };
+        });
+
+        return { success: true, isBajaSearch: true, assets: assetsWithBaja };
+      } else {
+        where.status = { contains: args.status, mode: 'insensitive' };
+      }
     }
+
     if (args.location) {
       where.location = { contains: args.location, mode: 'insensitive' };
     }
@@ -210,15 +253,29 @@ export class AiAssistantMcpService implements AiAssistantMcpUseCase {
       searchName = fullName;
     }
 
+    // Verificar si el usuario existe en el sistema
+    const userExists = await this.prisma.user.findFirst({
+      where: {
+        OR: [
+          { fullName: { contains: searchName, mode: 'insensitive' } },
+          { username: { equals: searchName, mode: 'insensitive' } }
+        ]
+      }
+    });
+
+    if (!userExists) {
+      return { success: false, error: 'UserNotFound', responsibleName: searchName };
+    }
+
     const assignments = await this.prisma.assignment.findMany({
-      where: { responsible: { contains: searchName, mode: 'insensitive' } },
+      where: { responsible: { contains: userExists.fullName, mode: 'insensitive' } },
     });
 
     const assets = await this.prisma.asset.findMany({
       where: { id: { in: assignments.map(a => a.assetId) } },
     });
 
-    return { success: true, responsibleName: searchName, assets };
+    return { success: true, responsibleName: userExists.fullName, assets };
   }
 
   private async executeMcpGetAssetHistory(args: any, role: string, fullName: string, cargo: string) {
@@ -420,7 +477,8 @@ Si la herramienta retornó un error, explícalo cortésmente.
       q.includes('scaf') ||
       q.includes('introducción') ||
       q.includes('faq') ||
-      q.includes('preguntas')
+      q.includes('preguntas') ||
+      q.includes('presupuesto')
     ) {
       return { name: 'search_knowledge_base', args: { query: pregunta } };
     }
@@ -452,24 +510,56 @@ Si la herramienta retornó un error, explícalo cortésmente.
 
     // 5. Activos de un usuario
     if (q.includes('usuario') || q.includes('tiene') || q.includes('responsable') || q.includes('asignado a')) {
-      let name = 'Ramiro';
-      if (q.includes('maria') || q.includes('elena') || q.includes('prado')) {
-        name = 'Maria Elena Prado';
-      } else if (q.includes('ramiro') || q.includes('mendoza')) {
+      let name = '';
+      const cleanPreg = pregunta.replace(/[?¿!¡]/g, '').trim();
+      const qLower = cleanPreg.toLowerCase();
+
+      if (qLower.includes('asignados a') || qLower.includes('asignado a')) {
+        name = cleanPreg.split(/asignado[s]? a/i)[1]?.trim();
+      } else if (qLower.includes('activos de')) {
+        name = cleanPreg.split(/activos de/i)[1]?.trim();
+      } else if (qLower.includes('cargo de')) {
+        name = cleanPreg.split(/cargo de/i)[1]?.trim();
+      } else if (qLower.includes('tiene asignado')) {
+        const parts = cleanPreg.split(/tiene asignado[s]?/i);
+        if (qLower.startsWith('qué') || qLower.startsWith('que') || qLower.startsWith('quién') || qLower.startsWith('quien') || qLower.startsWith('dame') || qLower.startsWith('mostrar')) {
+          name = parts[1]?.trim();
+        } else {
+          name = parts[0]?.trim();
+        }
+      } else if (qLower.includes('tiene')) {
+        const parts = cleanPreg.split(/tiene/i);
+        if (qLower.startsWith('qué') || qLower.startsWith('que') || qLower.startsWith('quién') || qLower.startsWith('quien') || qLower.startsWith('dame') || qLower.startsWith('mostrar')) {
+          name = parts[1]?.trim();
+        } else {
+          name = parts[0]?.trim();
+        }
+      }
+
+      if (name) {
+        // Limpiar palabras sobrantes
+        name = name
+          .replace(/(algún|algun|activos|activo|asignados|asignado|algunos|bienes|bien|un|de|el|la|si|usuario|usuarios)/gi, '')
+          .trim();
+      }
+
+      // Fallback final
+      if (!name) {
         name = 'Ramiro Mendoza Gonzales';
       }
+
       return { name: 'get_user_assets', args: { responsibleName: name } };
     }
  
     // Por defecto, buscar activos
     let category: string | undefined;
-    if (q.includes('sistemas') || q.includes('ti') || q.includes('computadora') || q.includes('servidor')) {
+    if (q.includes('sistemas') || /\b(ti|computo|cómputo|computadora|computadoras|laptop|laptops|servidor|servidores)\b/i.test(pregunta) || q.includes('poweredge') || q.includes('thinkpad')) {
       category = 'Sistemas/TI';
     } else if (q.includes('mueble') || q.includes('enseres') || q.includes('escritorio') || q.includes('silla')) {
       category = 'Muebles y Enseres';
     } else if (q.includes('oficina') || q.includes('proyector')) {
       category = 'Equipos de Oficina';
-    } else if (q.includes('vehículo') || q.includes('camioneta') || q.includes('auto')) {
+    } else if (q.includes('vehículo') || q.includes('vehiculo') || q.includes('camioneta') || /\b(auto|autos|automóvil|automovil|toyota|hilux)\b/i.test(pregunta)) {
       category = 'Vehículos';
     }
 
@@ -491,11 +581,13 @@ Si la herramienta retornó un error, explícalo cortésmente.
       status = 'Dañado';
     } else if (q.includes('obsoleto')) {
       status = 'Obsoleto';
+    } else if (q.includes('baja')) {
+      status = 'Baja';
     }
 
     // Limpiar el query quitando palabras comunes de filtrado para que no interfieran en la descripción
     const cleanQuery = pregunta
-      .replace(/(buscar|busca|activos|activo|dame|muestrame|los|las|de|en|un|una|la|categoría|categoria|ubicación|ubicacion|estado|sistemas|ti|muebles|enseres|equipos|oficina|vehículos|vehiculo|tecnología|computo|medicina|económicas|economicas)/gi, '')
+      .replace(/(buscar|busca|activos|activo|dame|muestrame|los|las|de|en|un|una|la|categoría|categoria|ubicación|ubicacion|estado|sistemas|ti|muebles|enseres|equipos|oficina|vehículos|vehiculo|tecnología|computo|medicina|económicas|economicas|fueron|dados|baja|bajas)/gi, '')
       .replace(/\s+/g, ' ')
       .trim();
 
@@ -511,9 +603,36 @@ Si la herramienta retornó un error, explícalo cortésmente.
   }
 
   private generateFallbackNaturalResponse(toolName: string, args: any, result: any): string {
-    if (result.error) return `⚠️ **Error:** ${result.error}`;
+    if (result.error) {
+      if (result.error === 'UserNotFound') {
+        return `👤 El usuario **${result.responsibleName || args?.responsibleName || ''}** no está registrado en el sistema.\n\n` +
+          `**Sugerencias:**\n` +
+          `- Verifica que el nombre esté escrito de forma exacta.\n` +
+          `- Intenta buscar usuarios de prueba como **Ramiro Mendoza Gonzales** o **Maria Elena Prado**.`;
+      }
+      if (result.error === 'Activo no encontrado') {
+        return `🔍 No se encontró ningún activo registrado con el código **${args?.assetId || ''}**.\n\n` +
+          `**Sugerencias:**\n` +
+          `- Verifica que el código QR esté bien escrito (ej: **ACT-2026-001**, **ACT-2026-006**).\n` +
+          `- Si el activo es de reciente adquisición, consulta el manual sobre cómo registrarlo.`;
+      }
+      if (result.error.includes('No autorizado')) {
+        return `⚠️ **Acceso Restringido:** No posees los permisos requeridos para consultar este activo.\n\n` +
+          `**Sugerencias:**\n` +
+          `- Como usuario estándar, tu cuenta solo tiene permitido auditar activos asignados a tu propio nombre.\n` +
+          `- Para auditar de forma global, solicita la asignación del rol de Administrador o Supervisor.`;
+      }
+      
+      return `⚠️ Lo siento, no se pudo procesar la consulta en este momento (${result.error}).\n\n` +
+        `**Sugerencias:**\n` +
+        `- Verifica los parámetros introducidos en tu pregunta.\n` +
+        `- Intenta consultar información general como estadísticas de inventario o el manual de ayuda.`;
+    }
 
     if (toolName === 'search_knowledge_base') {
+      if (!result || result.length === 0) {
+        return `Lo siento, no tengo ese dato o información en el Manual de Usuario de Activa360.`;
+      }
       return `📚 **Resultados de la documentación (RAG):**\n\n` + 
         result.map((r: any) => `📌 **Sección: ${r.metadata.section}**\n${r.contenido}`).join('\n\n');
     }
@@ -530,8 +649,26 @@ Si la herramienta retornó un error, explícalo cortésmente.
 
     if (toolName === 'search_assets') {
       if (!result.assets || result.assets.length === 0) {
-        return `🔍 No se encontraron activos que coincidan con la búsqueda "${args.query || ''}".`;
+        let criteriaList: string[] = [];
+        if (args.category) criteriaList.push(`categoría **${args.category}**`);
+        if (args.location) criteriaList.push(`ubicación **${args.location}**`);
+        if (args.status) criteriaList.push(`estado **${args.status}**`);
+        if (args.query) criteriaList.push(`descripción "${args.query}"`);
+
+        const criteriaText = criteriaList.length > 0 ? criteriaList.join(', ') : 'los filtros seleccionados';
+        return `🔍 No se encontraron activos que coincidan con ${criteriaText}.`;
       }
+
+      if (result.isBajaSearch) {
+        let response = `🗑️ **Activos en proceso de Baja o Retirados (SABS):**\n\n`;
+        result.assets.forEach((a: any) => {
+          response += `- **${a.qrCode}**: ${a.name}\n`;
+          response += `  - **Estado de la solicitud de Baja**: *${a.bajaStatus}*\n`;
+          response += `  - **Justificación**: "${a.justification}"\n\n`;
+        });
+        return response;
+      }
+
       let response = `🔍 **Activos encontrados en el sistema (MCP):**\n\n`;
       result.assets.forEach((a: any) => {
         response += `- **${a.qrCode}**: ${a.name} (Estado: *${a.status}*, Ubicación: *${a.location}*)\n`;
@@ -552,8 +689,14 @@ Si la herramienta retornó un error, explícalo cortésmente.
     }
 
     if (toolName === 'get_user_assets') {
+      if (result.error === 'UserNotFound') {
+        return `👤 El usuario **${result.responsibleName}** no está registrado en el sistema.`;
+      }
+      if (result.error) {
+        return `⚠️ **Error:** ${result.error}`;
+      }
       if (!result.assets || result.assets.length === 0) {
-        return `👤 El usuario **${result.responsibleName}** no tiene activos asignados actualmente.`;
+        return `👤 El usuario **${result.responsibleName}** no tiene ningún activo asignado a su nombre.`;
       }
       let response = `👤 **Activos asignados a ${result.responsibleName}:**\n\n`;
       result.assets.forEach((a: any) => {
