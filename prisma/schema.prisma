@@ -114,3 +114,31 @@ model AiConversation {
   @@map("AI_CONVERSATIONS")
 }
 
+// --- Feature 1: Inventario QR con control de concurrencia ---
+
+// Modelo de Campaña de Inventario Físico
+model InventoryCampaign {
+  id        String            @id @default(uuid())
+  name      String
+  startDate DateTime
+  endDate   DateTime?
+  createdAt DateTime          @default(now())
+  records   InventoryRecord[]
+
+  @@map("inventory_campaigns")
+}
+
+// Modelo de Registro de Inventario QR
+// La restricción @@unique garantiza que no puedan existir dos registros
+// del mismo activo dentro de la misma campaña, incluso con solicitudes concurrentes.
+model InventoryRecord {
+  id         String          @id @default(uuid())
+  campaignId String
+  assetId    String
+  userId     String
+  createdAt  DateTime        @default(now())
+  campaign   InventoryCampaign @relation(fields: [campaignId], references: [id])
+
+  @@unique([campaignId, assetId])
+  @@map("inventory_records")
+}
