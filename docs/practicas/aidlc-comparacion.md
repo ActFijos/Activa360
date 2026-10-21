@@ -15,7 +15,7 @@
 
 | Integrante | Qué hizo | Commits o PR |
 | :---- | :---- | :---- |
-| _(individual)_ | Implementación completa de ambas versiones del adaptador | — |
+| Guillermo Omar Daza Alcalá | Implementación completa de ambas versiones del adaptador | [0136415](https://github.com/ActFijos/Activa360/commit/0136415), [9d50f3a](https://github.com/ActFijos/Activa360/commit/9d50f3a) |
 
 ## 2\. El feature
 
