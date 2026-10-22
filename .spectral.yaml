@@ -1,0 +1,51 @@
+# .spectral.yaml
+# Ruleset de Spectral para Activa360 API
+# Documentación: https://docs.stoplight.io/docs/spectral/
+
+extends:
+  - spectral:oas  # Reglas base de OpenAPI Specification
+
+rules:
+  # Todos los endpoints deben tener descripción de operación
+  operation-description:
+    given: "$.paths[*][*]"
+    severity: warn
+    then:
+      field: description
+      function: truthy
+
+  # Todos los endpoints deben tener al menos una respuesta de éxito (2xx)
+  operation-success-response:
+    given: "$.paths[*][*].responses"
+    severity: error
+    then:
+      function: schema
+      functionOptions:
+        schema:
+          type: object
+          minProperties: 1
+
+  # Las respuestas de error deben incluir el schema del error
+  error-response-schema:
+    given: "$.paths[*][*].responses[4*,5*]"
+    severity: warn
+    then:
+      field: content
+      function: truthy
+
+  # La versión de la API debe estar definida
+  info-version:
+    given: "$.info"
+    severity: error
+    then:
+      field: version
+      function: truthy
+
+  # Los tags de operación deben estar en minúsculas
+  tag-lowercase:
+    given: "$.paths[*][*].tags[*]"
+    severity: hint
+    then:
+      function: pattern
+      functionOptions:
+        match: "^[a-z][a-z0-9-]*$"

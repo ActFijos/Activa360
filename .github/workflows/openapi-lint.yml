@@ -1,0 +1,55 @@
+name: OpenAPI Contract Lint & Drift Check
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  openapi-lint:
+    name: Spectral Lint + Drift Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout código
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Instalar dependencias
+        run: npm ci --legacy-peer-deps
+
+      - name: Generar openapi.json desde el código
+        run: npm run openapi:export
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL || 'postgresql://user:pass@localhost:5432/activa360_test' }}
+          PORT: 3001
+
+      - name: Verificar drift (openapi.json en repo vs. generado)
+        run: |
+          if [ -f openapi.json ]; then
+            git diff --exit-code openapi.json || \
+              (echo "❌ DRIFT DETECTADO: openapi.json no coincide con el código. Ejecuta 'npm run openapi:export' y haz commit." && exit 1)
+          else
+            echo "⚠️ openapi.json no existe en el repo. Asegúrate de hacer commit del archivo generado."
+            exit 1
+          fi
+
+      - name: Instalar Spectral CLI
+        run: npm install -g @stoplight/spectral-cli
+
+      - name: Lint del contrato con Spectral (OAS ruleset)
+        run: spectral lint openapi.json --ruleset .spectral.yaml --fail-severity warn
+
+      # Opcional — suma puntos
+      # - name: oasdiff (detección de breaking changes)
+      #   uses: tufin/oasdiff-action@v1
+      #   with:
+      #     base: origin/main:openapi.json
+      #     revision: openapi.json
+      #     fail-on: ERR
