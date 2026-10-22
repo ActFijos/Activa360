@@ -9,13 +9,13 @@
 - **Rama sin herramienta (A):** [`feature-sin-aidlc`](https://github.com/ActFijos/Activa360/tree/feature-sin-aidlc)  
 - **Rama con herramienta (B):** [`feature-con-aidlc`](https://github.com/ActFijos/Activa360/tree/feature-con-aidlc)  
 - **AI-DLC versión:** `aidlc 2.11.0 (runtime 2.11.0)`  
-- **Video (opcional):**
+- **Video (opcional):** N/A — se entrega solo el repositorio con las dos ramas.
 
 **Responsables** (obligatorio si es en grupo; cada aporte debe verse en los commits con la identidad de su autor):
 
 | Integrante | Qué hizo | Commits o PR |
 | :---- | :---- | :---- |
-| _(individual)_ | Implementación completa de ambas versiones del adaptador | — |
+| Administrador (autor del repositorio) | Implementación completa de ambas versiones del adaptador, redacción de la comparación y revisión de puertas AI-DLC | Commits en `feature-sin-aidlc` y `feature-con-aidlc` |
 
 ## 2\. El feature
 
@@ -212,7 +212,7 @@ Archivos de auditoría generados por AI-DLC:
 
 ## 7\. Antes de entregar
 
-- [ ] Las dos ramas están en el repositorio y las pruebas pasan en ambas.  
-- [ ] `aidlc/` y `.aidlc-version` están versionados en la rama B.  
-- [ ] No hay secretos, `.env` ni archivos `*.local.json` en los commits.  
-- [ ] Si es en grupo, la tabla de responsables está completa.
+- [x] Las dos ramas están en el repositorio y las pruebas pasan en ambas.  
+- [x] `aidlc/` y `.aidlc-version` están versionados en la rama B.  
+- [x] No hay secretos, `.env` ni archivos `*.local.json` en los commits.  
+- [x] Modalidad individual — tabla de responsables completa con el nombre del autor.
