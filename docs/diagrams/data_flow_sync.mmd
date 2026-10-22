@@ -1,0 +1,18 @@
+%% Secuencia de Flujo de Datos (Data Flow Sequence) - Sincronización Offline de Activa360
+sequenceDiagram
+  participant App as Mobile App (Offline DB)
+  participant API as API Gateway
+  participant Sync as Sync Service
+  participant DB as PostgreSQL
+
+  App->>API: POST /api/sync/batch (lista de escaneos)
+  API->>Sync: Validar token y rutear payload
+  Sync->>DB: Consultar timestamp actual de los activos
+  alt Conflicto (Timestamp local < DB)
+    Sync->>Sync: Resolver (mantener versión DB)
+  else Sin Conflicto
+    Sync->>DB: Actualizar estado y ubicación
+  end
+  Sync-->>API: 200 OK (Resultados de Sync)
+  API-->>App: Responde qué IDs fueron exitosos
+  App->>App: Marca registros locales como sincronizados
