@@ -10,12 +10,20 @@ import {
   ValidationPipe,
   NotFoundException,
 } from '@nestjs/common';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiBody,
+  ApiParam,
+  ApiResponse,
+} from '@nestjs/swagger';
 import { TransferAssetUseCase } from '../../../domain/ports/in/transfer-asset.use-case.js';
 import { TransferRepositoryPort } from '../../../domain/ports/out/transfer-repository.port.js';
 import { TransferAssetDto } from './dto/transfer-asset.dto.js';
 import { PrismaService } from '../../../../compliance/adapters/out/db/prisma.service.js';
 import { randomUUID } from 'crypto';
 
+@ApiTags('activos')
 @Controller('activos')
 export class TransferAssetController {
   constructor(
@@ -27,6 +35,22 @@ export class TransferAssetController {
   @Post('transferir')
   @HttpCode(HttpStatus.OK)
   @UsePipes(new ValidationPipe({ whitelist: true }))
+  @ApiOperation({
+    summary: 'Solicitar transferencia de activo entre unidades',
+    description:
+      'Inicia una transferencia de activo con bloqueo pesimista (SELECT FOR UPDATE) ' +
+      'dentro de una transacción Prisma. Garantiza que dos solicitudes concurrentes ' +
+      'para el mismo activo no generen transferencias duplicadas. ' +
+      'Caso de uso FSD: UC-TRANS-001.',
+  })
+  @ApiBody({ type: TransferAssetDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Transferencia creada en estado Pendiente.',
+    schema: { example: { id: 'uuid', assetId: 'uuid', status: 'Pendiente', toUnit: 'Unidad B' } },
+  })
+  @ApiResponse({ status: 404, description: 'Activo no encontrado.' })
+  @ApiResponse({ status: 409, description: 'El activo está dado de baja o en proceso de baja.' })
   async transferAsset(@Body() dto: TransferAssetDto) {
     return this.transferAssetUseCase.execute({
       assetId: dto.assetId,
@@ -38,12 +62,18 @@ export class TransferAssetController {
   }
 
   @Get('transferencias')
+  @ApiOperation({ summary: 'Listar todas las transferencias registradas' })
+  @ApiResponse({ status: 200, description: 'Lista de transferencias.' })
   async getTransfers() {
     return this.transferRepository.findAll();
   }
 
   @Post('transferencias/:id/aprobar')
   @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Aprobar una transferencia pendiente y actualizar estado del activo' })
+  @ApiParam({ name: 'id', description: 'ID de la transferencia a aprobar' })
+  @ApiResponse({ status: 200, description: 'Transferencia aprobada exitosamente.' })
+  @ApiResponse({ status: 404, description: 'Transferencia o activo no encontrado.' })
   async approveTransfer(@Param('id') id: string) {
     const transfer = await this.prisma.transfer.findUnique({
       where: { id },
@@ -90,6 +120,10 @@ export class TransferAssetController {
 
   @Post('transferencias/:id/rechazar')
   @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Rechazar una transferencia pendiente' })
+  @ApiParam({ name: 'id', description: 'ID de la transferencia a rechazar' })
+  @ApiResponse({ status: 200, description: 'Transferencia rechazada exitosamente.' })
+  @ApiResponse({ status: 404, description: 'Transferencia no encontrada.' })
   async rejectTransfer(@Param('id') id: string) {
     const transfer = await this.prisma.transfer.findUnique({
       where: { id },

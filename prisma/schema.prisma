@@ -42,6 +42,7 @@ model Asset {
 
   movements       Movement[]
   maintenances    MaintenanceReport[]
+  transfers       Transfer[]
 }
 
 // Modelo de Geolocalización y Escaneo (Historial de ubicaciones)
@@ -58,6 +59,7 @@ model Movement {
 model Transfer {
   id              String   @id @default(uuid())
   assetId         String
+  asset           Asset    @relation(fields: [assetId], references: [id])
   fromUnit        String
   fromResponsible String
   toUnit          String

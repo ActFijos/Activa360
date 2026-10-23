@@ -27,6 +27,13 @@ import { TransferAssetService } from './domain/services/transfer-asset.service.j
 import { TransferRepositoryPort } from './domain/ports/out/transfer-repository.port.js';
 import { PrismaTransferAdapter } from './adapters/out/db/prisma-transfer.adapter.js';
 
+// Inventario QR (Feature 1 + Feature 2)
+import { InventoryScanController } from './adapters/in/web/inventory-scan.controller.js';
+import { RegisterInventoryScanUseCase } from './domain/ports/in/register-inventory-scan.use-case.js';
+import { RegisterInventoryScanService } from './domain/services/register-inventory-scan.service.js';
+import { InventoryRecordRepositoryPort } from './domain/ports/out/inventory-record-repository.port.js';
+import { PrismaInventoryRecordAdapter } from './adapters/out/db/prisma-inventory-record.adapter.js';
+
 // Reportes
 import { ReportsStatsController } from './adapters/in/web/reports-stats.controller.js';
 
@@ -39,6 +46,7 @@ import { UsersController } from './adapters/in/web/users.controller.js';
     RegisterAssetController,
     AssignAssetController,
     TransferAssetController,
+    InventoryScanController,
     ReportsStatsController,
     UsersController,
   ],
@@ -60,6 +68,8 @@ import { UsersController } from './adapters/in/web/users.controller.js';
       provide: AssignAssetUseCase,
       useClass: AssignAssetService,
     },
+    // Feature 2: TransferAssetService ahora usa PrismaService directamente
+    // para implementar $transaction + SELECT FOR UPDATE (bloqueo pesimista)
     {
       provide: TransferAssetUseCase,
       useClass: TransferAssetService,
@@ -80,6 +90,15 @@ import { UsersController } from './adapters/in/web/users.controller.js';
       provide: MovementRepositoryPort,
       useClass: InMemoryMovementRepository,
     },
+    // Feature 1: Registro de inventario QR con control de concurrencia
+    {
+      provide: RegisterInventoryScanUseCase,
+      useClass: RegisterInventoryScanService,
+    },
+    {
+      provide: InventoryRecordRepositoryPort,
+      useClass: PrismaInventoryRecordAdapter,
+    },
   ],
   exports: [
     ScanQrUseCase,
@@ -91,6 +110,8 @@ import { UsersController } from './adapters/in/web/users.controller.js';
     AssignmentRepositoryPort,
     TransferRepositoryPort,
     MovementRepositoryPort,
+    RegisterInventoryScanUseCase,
+    InventoryRecordRepositoryPort,
   ],
 })
 export class InventoryModule {}
