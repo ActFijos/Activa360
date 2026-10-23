@@ -1,0 +1,942 @@
+{
+  "openapi": "3.0.0",
+  "paths": {
+    "/": {
+      "get": {
+        "operationId": "AppController_getHello",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "App"
+        ]
+      }
+    },
+    "/activos/qr": {
+      "post": {
+        "operationId": "ScanQrController_scanQr",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ScanQrDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "ScanQr"
+        ]
+      }
+    },
+    "/activos/sync": {
+      "post": {
+        "operationId": "ScanQrController_syncOffline",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SyncOfflineDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "ScanQr"
+        ]
+      }
+    },
+    "/activos": {
+      "post": {
+        "operationId": "RegisterAssetController_registerAsset",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterAssetDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "RegisterAsset"
+        ]
+      },
+      "get": {
+        "operationId": "RegisterAssetController_getAllAssets",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "RegisterAsset"
+        ]
+      }
+    },
+    "/activos/qr/{qrCode}": {
+      "get": {
+        "operationId": "RegisterAssetController_getAssetByQrCode",
+        "parameters": [
+          {
+            "name": "qrCode",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "RegisterAsset"
+        ]
+      }
+    },
+    "/activos/{id}/inspeccionar": {
+      "post": {
+        "operationId": "RegisterAssetController_inspectAsset",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SubmitInspectionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "RegisterAsset"
+        ]
+      }
+    },
+    "/activos/asignar": {
+      "post": {
+        "operationId": "AssignAssetController_assignAsset",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AssignAssetDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "AssignAsset"
+        ]
+      }
+    },
+    "/activos/asignaciones": {
+      "get": {
+        "operationId": "AssignAssetController_getAssignments",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "AssignAsset"
+        ]
+      }
+    },
+    "/activos/empleados": {
+      "get": {
+        "operationId": "AssignAssetController_getEmployees",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "AssignAsset"
+        ]
+      }
+    },
+    "/activos/transferir": {
+      "post": {
+        "description": "Inicia una transferencia de activo con bloqueo pesimista (SELECT FOR UPDATE) dentro de una transacción Prisma. Garantiza que dos solicitudes concurrentes para el mismo activo no generen transferencias duplicadas. Caso de uso FSD: UC-TRANS-001.",
+        "operationId": "TransferAssetController_transferAsset",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TransferAssetDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Transferencia creada en estado Pendiente.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "id": "uuid",
+                    "assetId": "uuid",
+                    "status": "Pendiente",
+                    "toUnit": "Unidad B"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Activo no encontrado."
+          },
+          "409": {
+            "description": "El activo está dado de baja o en proceso de baja."
+          }
+        },
+        "summary": "Solicitar transferencia de activo entre unidades",
+        "tags": [
+          "activos"
+        ]
+      }
+    },
+    "/activos/transferencias": {
+      "get": {
+        "operationId": "TransferAssetController_getTransfers",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Lista de transferencias."
+          }
+        },
+        "summary": "Listar todas las transferencias registradas",
+        "tags": [
+          "activos"
+        ]
+      }
+    },
+    "/activos/transferencias/{id}/aprobar": {
+      "post": {
+        "operationId": "TransferAssetController_approveTransfer",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "ID de la transferencia a aprobar",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Transferencia aprobada exitosamente."
+          },
+          "404": {
+            "description": "Transferencia o activo no encontrado."
+          }
+        },
+        "summary": "Aprobar una transferencia pendiente y actualizar estado del activo",
+        "tags": [
+          "activos"
+        ]
+      }
+    },
+    "/activos/transferencias/{id}/rechazar": {
+      "post": {
+        "operationId": "TransferAssetController_rejectTransfer",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "ID de la transferencia a rechazar",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Transferencia rechazada exitosamente."
+          },
+          "404": {
+            "description": "Transferencia no encontrada."
+          }
+        },
+        "summary": "Rechazar una transferencia pendiente",
+        "tags": [
+          "activos"
+        ]
+      }
+    },
+    "/inventory/scan": {
+      "post": {
+        "description": "Persiste el registro de un activo escaneado dentro de una campaña. Garantiza que dos escaneos concurrentes del mismo activo en la misma campaña no generan duplicados (restricción UNIQUE en PostgreSQL). Caso de uso FSD: UC-INV-001.",
+        "operationId": "InventoryScanController_registerScan",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterInventoryScanDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Activo registrado correctamente en el inventario de la campaña.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "message": "Activo registrado en el inventario correctamente.",
+                    "record": {
+                      "id": "uuid-v4",
+                      "campaignId": "camp-2026-q4",
+                      "assetId": "asset-abc-123",
+                      "userId": "user-xyz-789",
+                      "createdAt": "2026-10-22T20:00:00.000Z"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflicto — el activo ya fue registrado en esta campaña (duplicado rechazado).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 409,
+                    "message": "El activo asset-abc-123 ya fue registrado en la campaña camp-2026-q4.",
+                    "error": "Conflict"
+                  }
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Datos de entrada inválidos."
+          }
+        },
+        "summary": "Registrar escaneo QR de activo en campaña de inventario",
+        "tags": [
+          "inventario"
+        ]
+      }
+    },
+    "/activos/reportes/estadisticas": {
+      "get": {
+        "operationId": "ReportsStatsController_getStats",
+        "parameters": [
+          {
+            "name": "startDate",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "endDate",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "location",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "ReportsStats"
+        ]
+      }
+    },
+    "/activos/reportes/depreciacion": {
+      "get": {
+        "operationId": "ReportsStatsController_getDepreciacion",
+        "parameters": [
+          {
+            "name": "startDate",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "endDate",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "location",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "ReportsStats"
+        ]
+      }
+    },
+    "/activos/reportes/inventario": {
+      "get": {
+        "operationId": "ReportsStatsController_getInventario",
+        "parameters": [
+          {
+            "name": "startDate",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "endDate",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "location",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "ReportsStats"
+        ]
+      }
+    },
+    "/activos/reportes/valoracion": {
+      "get": {
+        "operationId": "ReportsStatsController_getValoracion",
+        "parameters": [
+          {
+            "name": "startDate",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "endDate",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "location",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "ReportsStats"
+        ]
+      }
+    },
+    "/activos/reportes/mantenimiento": {
+      "get": {
+        "operationId": "ReportsStatsController_getMantenimiento",
+        "parameters": [
+          {
+            "name": "startDate",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "endDate",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "location",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "ReportsStats"
+        ]
+      }
+    },
+    "/activos/reportes/bajas": {
+      "get": {
+        "operationId": "ReportsStatsController_getBajas",
+        "parameters": [
+          {
+            "name": "startDate",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "endDate",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "location",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "ReportsStats"
+        ]
+      }
+    },
+    "/activos/reportes/transferencias": {
+      "get": {
+        "operationId": "ReportsStatsController_getTransferencias",
+        "parameters": [
+          {
+            "name": "startDate",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "endDate",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "location",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "ReportsStats"
+        ]
+      }
+    },
+    "/activos/reportes/alertas-notificaciones": {
+      "get": {
+        "operationId": "ReportsStatsController_getAlertasNotificaciones",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "ReportsStats"
+        ]
+      }
+    },
+    "/usuarios": {
+      "get": {
+        "operationId": "UsersController_getAll",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Users"
+        ]
+      },
+      "post": {
+        "operationId": "UsersController_create",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Users"
+        ]
+      }
+    },
+    "/usuarios/{id}": {
+      "put": {
+        "operationId": "UsersController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Users"
+        ]
+      },
+      "delete": {
+        "operationId": "UsersController_remove",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Users"
+        ]
+      }
+    },
+    "/bajas": {
+      "post": {
+        "operationId": "InitiateBajaController_initiateBaja",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InitiateBajaDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "InitiateBaja"
+        ]
+      },
+      "get": {
+        "operationId": "InitiateBajaController_getBajas",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "InitiateBaja"
+        ]
+      }
+    },
+    "/bajas/{id}/aprobar": {
+      "post": {
+        "operationId": "InitiateBajaController_approveBaja",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "InitiateBaja"
+        ]
+      }
+    },
+    "/bajas/{id}/rechazar": {
+      "post": {
+        "operationId": "InitiateBajaController_rejectBaja",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "InitiateBaja"
+        ]
+      }
+    },
+    "/asistente-ia/preguntar": {
+      "post": {
+        "operationId": "AiAssistantController_preguntar",
+        "parameters": [
+          {
+            "name": "x-user-username",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "AiAssistant"
+        ]
+      }
+    },
+    "/asistente-ia-mcp/preguntar": {
+      "post": {
+        "operationId": "AiAssistantMcpController_preguntar",
+        "parameters": [
+          {
+            "name": "x-user-username",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "AiAssistantMcp"
+        ]
+      }
+    }
+  },
+  "info": {
+    "title": "Activa360 API",
+    "description": "API de gestión de activos fijos — Inventario QR, Transferencias y Bajas SABS",
+    "version": "8.2.0",
+    "contact": {}
+  },
+  "tags": [],
+  "servers": [],
+  "components": {
+    "securitySchemes": {
+      "bearer": {
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "type": "http"
+      }
+    },
+    "schemas": {
+      "ScanQrDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "SyncOfflineDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "RegisterAssetDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "SubmitInspectionDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "AssignAssetDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "TransferAssetDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "RegisterInventoryScanDto": {
+        "type": "object",
+        "properties": {
+          "campaignId": {
+            "type": "string",
+            "description": "ID de la campaña de inventario",
+            "example": "camp-2026-q4"
+          },
+          "assetId": {
+            "type": "string",
+            "description": "ID del activo escaneado (QR)",
+            "example": "asset-abc-123"
+          },
+          "userId": {
+            "type": "string",
+            "description": "ID del usuario que realiza el escaneo",
+            "example": "user-xyz-789"
+          }
+        },
+        "required": [
+          "campaignId",
+          "assetId",
+          "userId"
+        ]
+      },
+      "InitiateBajaDto": {
+        "type": "object",
+        "properties": {}
+      }
+    }
+  }
+}
