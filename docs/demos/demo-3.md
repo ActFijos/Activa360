@@ -8,6 +8,7 @@ Notas del release: [`8.3.0-aportes.md`](../../8.3.0-aportes.md)
 | Integrante | Funcionalidad | Caso de uso FSD | Repositorio |
 | :---- | :---- | :---- | :---- |
 | Josefina Rojas | Workflow de Baja (SABS) con justificación, evidencia y control de estados (`POST /bajas`, `GET /bajas`, `POST /bajas/{id}/aprobar`, `POST /bajas/{id}/rechazar`) | FSD-UC-003 – Workflow de Baja (SABS) | https://github.com/ActFijos/Activa360 |
+| Rita Nina | Asignación de Activos a Custodio con registro y firma digital (`POST /activos/asignar`, `GET /activos/asignaciones`, `GET /activos/empleados`) | FSD-UC-004 – Asignación a Custodio | https://github.com/ActFijos/Activa360 |
 
 ---
 
@@ -30,3 +31,21 @@ Notas del release: [`8.3.0-aportes.md`](../../8.3.0-aportes.md)
   - **Resolución de la baja:**
     - Al invocar `POST /bajas/{id}/aprobar`, el registro de baja pasa a `APROBADA` y el activo se retira definitivamente del inventario operativo (`Dado_De_Baja`).
     - Al invocar `POST /bajas/{id}/rechazar`, el registro de baja pasa a `RECHAZADA` y el sistema evalúa el diagnóstico técnico previo registrado en `MaintenanceReport` para restaurar con precisión el estado operativo anterior (`Dañado` u `Obsoleto`).
+
+---
+
+### 2.2 Asignación de Activos a Custodio — FSD-UC-004 (Rita Nina)
+
+- **Endpoints (OpenAPI):** `POST /activos/asignar`, `GET /activos/asignaciones`, `GET /activos/empleados`.
+- **Criterios de aceptación (FSD):**
+  ```gherkin
+  Dado un activo sin custodio actual
+  Cuando el Jefe asigna el activo a un Funcionario
+  Entonces el Funcionario recibe una notificación para aceptar
+    Y el sistema registra la firma digital de asignación
+  ```
+- **Trazabilidad y custodia patrimonial:**
+  - `AssignAssetService` formaliza la entrega y custodia de bienes institucionales.
+  - Valida la disponibilidad del activo y vincula la responsabilidad directa al funcionario receptor (`responsible`).
+  - **Registro de asignación:** Persiste en `AssignmentRecord` el detalle completo del activo asignado (`assetId`), fecha formal (`date`), destino físico (`destination`) y observaciones técnicas/administrativas.
+  - **Consulta y nómina:** Permite auditar el histórico total de traspasos y asignaciones mediante `GET /activos/asignaciones`, e integrarse con la nómina de funcionarios mediante `GET /activos/empleados`.
