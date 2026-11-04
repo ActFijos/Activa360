@@ -1,0 +1,32 @@
+# Demo 3 · release/8.3.0
+
+Release: https://github.com/ActFijos/Activa360/releases/tag/v8.3.0  
+Notas del release: [`8.3.0-aportes.md`](../../8.3.0-aportes.md)
+
+## 1. Integrantes y funcionalidades
+
+| Integrante | Funcionalidad | Caso de uso FSD | Repositorio |
+| :---- | :---- | :---- | :---- |
+| Josefina Rojas | Workflow de Baja (SABS) con justificación, evidencia y control de estados (`POST /bajas`, `GET /bajas`, `POST /bajas/{id}/aprobar`, `POST /bajas/{id}/rechazar`) | FSD-UC-003 – Workflow de Baja (SABS) | https://github.com/ActFijos/Activa360 |
+
+---
+
+## 2. Detalle de funcionalidades presentadas
+
+### 2.1 Workflow de Baja (SABS) — FSD-UC-003 (Josefina Rojas)
+
+- **Endpoints (OpenAPI):** `POST /bajas`, `GET /bajas`, `POST /bajas/{id}/aprobar`, `POST /bajas/{id}/rechazar`.
+- **Criterios de aceptación (FSD):**
+  ```gherkin
+  Dado un activo en estado "Dañado" u "Obsoleto"
+  Cuando el Jefe de Activos inicia el proceso de baja
+  Entonces el sistema requiere una justificación y evidencia
+    Y cambia el estado del activo a "En Proceso de Baja"
+  ```
+- **Control normativo de estados y auditoría:**
+  - `InitiateBajaService` valida que el activo exista y que el solicitante (`jefeId`) cuente con el rol institucional de Jefe de Activos Fijos.
+  - **Justificación y evidencia obligatorias:** Requiere el ingreso explícito de motivos normativos conforme al D.S. 0181 (SABS) y el registro de evidencia documental/fotográfica adjunta.
+  - **Transición de estados:** Cambia el estado del activo a `En Proceso de Baja` y crea el registro de baja en estado inicial `EN_REVISION`.
+  - **Resolución de la baja:**
+    - Al invocar `POST /bajas/{id}/aprobar`, el registro de baja pasa a `APROBADA` y el activo se retira definitivamente del inventario operativo (`Dado_De_Baja`).
+    - Al invocar `POST /bajas/{id}/rechazar`, el registro de baja pasa a `RECHAZADA` y el sistema evalúa el diagnóstico técnico previo registrado en `MaintenanceReport` para restaurar con precisión el estado operativo anterior (`Dañado` u `Obsoleto`).
