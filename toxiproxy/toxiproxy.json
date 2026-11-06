@@ -1,0 +1,4 @@
+[
+  { "name": "reports", "listen": "0.0.0.0:8666", "upstream": "reports:3001", "enabled": true }
+]
+
