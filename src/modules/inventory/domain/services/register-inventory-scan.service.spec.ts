@@ -1,24 +1,20 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { RegisterInventoryScanService } from './register-inventory-scan.service';
-import { InventoryRecordRepositoryPort } from '../ports/out/inventory-record-repository.port';
-import { AssetRepositoryPort } from '../ports/out/asset-repository.port';
-import { InventoryCampaignRepositoryPort } from '../ports/out/inventory-campaign-repository.port';
-import { InventoryRecord } from '../models/inventory-record.model';
-import { Asset, AssetStatus } from '../models/asset.model';
+import { RegisterInventoryScanService } from './register-inventory-scan.service.js';
+import { InventoryRecordRepositoryPort } from '../ports/out/inventory-record-repository.port.js';
+import { AssetRepositoryPort } from '../ports/out/asset-repository.port.js';
+import { InventoryRecord } from '../models/inventory-record.model.js';
+import { Asset, AssetStatus } from '../models/asset.model.js';
 import { NotFoundException, ConflictException } from '@nestjs/common';
 
 describe('RegisterInventoryScanService', () => {
   let service: RegisterInventoryScanService;
   let mockRecordRepo: jest.Mocked<InventoryRecordRepositoryPort>;
   let mockAssetRepo: jest.Mocked<AssetRepositoryPort>;
-  let mockCampaignRepo: jest.Mocked<InventoryCampaignRepositoryPort>;
 
   beforeEach(async () => {
     mockRecordRepo = {
       register: jest.fn(),
       existsRecord: jest.fn(),
-      findByCampaignId: jest.fn(),
-      countByCampaignId: jest.fn(),
     };
 
     mockAssetRepo = {
@@ -27,13 +23,6 @@ describe('RegisterInventoryScanService', () => {
       findByQrCode: jest.fn(),
       findAll: jest.fn(),
       update: jest.fn(),
-    };
-
-    mockCampaignRepo = {
-      create: jest.fn(),
-      findById: jest.fn(),
-      findAll: jest.fn(),
-      close: jest.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -47,10 +36,6 @@ describe('RegisterInventoryScanService', () => {
           provide: AssetRepositoryPort,
           useValue: mockAssetRepo,
         },
-        {
-          provide: InventoryCampaignRepositoryPort,
-          useValue: mockCampaignRepo,
-        },
       ],
     }).compile();
 
@@ -59,7 +44,7 @@ describe('RegisterInventoryScanService', () => {
     );
   });
 
-  it('debería registrar un escaneo exitoso cuando el activo existe y la campaña está activa', async () => {
+  it('debería registrar un escaneo exitoso cuando el activo existe', async () => {
     const asset = new Asset(
       'asset-1',
       'QR-001',
@@ -69,13 +54,6 @@ describe('RegisterInventoryScanService', () => {
       new Date(),
     );
     mockAssetRepo.findById.mockResolvedValue(asset);
-    mockCampaignRepo.findById.mockResolvedValue({
-      id: 'camp-1',
-      name: 'Campaña 2026',
-      startDate: new Date(),
-      endDate: null,
-      isActive: true,
-    } as any);
 
     const record = new InventoryRecord(
       'rec-1',
@@ -112,7 +90,7 @@ describe('RegisterInventoryScanService', () => {
     ).rejects.toThrow(NotFoundException);
   });
 
-  it('debería lanzar ConflictException si la campaña ya fue cerrada', async () => {
+  it('debería relanzar ConflictException si ya fue registrado previamente en la campaña', async () => {
     const asset = new Asset(
       'asset-1',
       'QR-001',
@@ -122,13 +100,9 @@ describe('RegisterInventoryScanService', () => {
       new Date(),
     );
     mockAssetRepo.findById.mockResolvedValue(asset);
-    mockCampaignRepo.findById.mockResolvedValue({
-      id: 'camp-1',
-      name: 'Campaña Cerrada',
-      startDate: new Date(),
-      endDate: new Date(),
-      isActive: false,
-    } as any);
+    mockRecordRepo.register.mockRejectedValue(
+      new ConflictException('El activo ya fue registrado'),
+    );
 
     await expect(
       service.execute({

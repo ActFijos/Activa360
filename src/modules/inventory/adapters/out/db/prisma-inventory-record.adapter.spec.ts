@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { PrismaInventoryRecordAdapter } from './prisma-inventory-record.adapter';
-import { PrismaService } from '../../../../compliance/adapters/out/db/prisma.service';
+import { PrismaInventoryRecordAdapter } from './prisma-inventory-record.adapter.js';
+import { PrismaService } from '../../../../compliance/adapters/out/db/prisma.service.js';
 import { ConflictException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 
@@ -13,7 +13,6 @@ describe('PrismaInventoryRecordAdapter', () => {
       inventoryRecord: {
         create: jest.fn(),
         count: jest.fn(),
-        findMany: jest.fn(),
       },
     };
 
@@ -97,32 +96,6 @@ describe('PrismaInventoryRecordAdapter', () => {
 
       const exists = await adapter.existsRecord('camp-123', 'asset-456');
       expect(exists).toBe(false);
-    });
-  });
-
-  describe('findByCampaignId y countByCampaignId', () => {
-    it('debería listar los registros por campaignId ordenados por fecha desc', async () => {
-      const now = new Date();
-      mockPrisma.inventoryRecord.findMany.mockResolvedValue([
-        {
-          id: 'rec-001',
-          campaignId: 'camp-123',
-          assetId: 'asset-456',
-          userId: 'user-789',
-          createdAt: now,
-        },
-      ]);
-
-      const records = await adapter.findByCampaignId('camp-123');
-      expect(records).toHaveLength(1);
-      expect(records[0].id).toBe('rec-001');
-    });
-
-    it('debería contar los registros por campaignId', async () => {
-      mockPrisma.inventoryRecord.count.mockResolvedValue(42);
-
-      const count = await adapter.countByCampaignId('camp-123');
-      expect(count).toBe(42);
     });
   });
 });

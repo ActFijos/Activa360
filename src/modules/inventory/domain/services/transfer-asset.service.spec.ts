@@ -1,62 +1,57 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { TransferAssetService } from './transfer-asset.service';
-import { AssetStatus } from '../models/asset.model';
+import { AssetRepositoryPort } from '../ports/out/asset-repository.port';
+import { TransferRepositoryPort } from '../ports/out/transfer-repository.port';
+import { AssignmentRepositoryPort } from '../ports/out/assignment-repository.port';
+import { InMemoryAssetRepository } from '../../adapters/out/persistence/in-memory-asset.repository';
+import { Asset, AssetStatus } from '../models/asset.model';
+import { Transfer } from '../models/transfer.model';
 import { NotFoundException, ConflictException } from '@nestjs/common';
-import { PrismaService } from '../../../compliance/adapters/out/db/prisma.service';
 
 describe('TransferAssetService', () => {
   let service: TransferAssetService;
-  let mockPrisma: any;
+  let assetRepo: InMemoryAssetRepository;
+  let fakeTransferRepo: jest.Mocked<TransferRepositoryPort>;
+  let fakeAssignmentRepo: jest.Mocked<AssignmentRepositoryPort>;
 
   beforeEach(async () => {
-    mockPrisma = {
-      $transaction: jest.fn().mockImplementation(async (callback) => {
-        return callback(mockPrisma);
-      }),
-      $queryRaw: jest.fn(),
-      asset: {
-        update: jest.fn().mockResolvedValue({}),
-      },
-      assignment: {
-        findFirst: jest.fn().mockResolvedValue(null),
-      },
-      transfer: {
-        create: jest.fn(),
-      },
+    fakeTransferRepo = {
+      save: jest.fn().mockImplementation((t: Transfer) => Promise.resolve(t)),
+      findById: jest.fn(),
+      findAll: jest.fn().mockResolvedValue([]),
+    };
+
+    fakeAssignmentRepo = {
+      save: jest.fn(),
+      findById: jest.fn(),
+      findAll: jest.fn().mockResolvedValue([]),
     };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         TransferAssetService,
-        { provide: PrismaService, useValue: mockPrisma },
+        { provide: AssetRepositoryPort, useClass: InMemoryAssetRepository },
+        { provide: TransferRepositoryPort, useValue: fakeTransferRepo },
+        { provide: AssignmentRepositoryPort, useValue: fakeAssignmentRepo },
       ],
     }).compile();
 
     service = module.get<TransferAssetService>(TransferAssetService);
+    assetRepo = module.get<AssetRepositoryPort>(
+      AssetRepositoryPort,
+    ) as InMemoryAssetRepository;
   });
 
   it('debería registrar exitosamente una transferencia en estado Pendiente', async () => {
-    mockPrisma.$queryRaw.mockResolvedValue([
-      {
-        id: 'asset-100',
-        name: 'Servidor Rack HP',
-        status: AssetStatus.OPERATIVO,
-        location: 'Oficina TI Central',
-      },
-    ]);
-
-    const createdRecord = {
-      id: 'trans-001',
-      assetId: 'asset-100',
-      fromUnit: 'Oficina TI Central',
-      fromResponsible: 'Almacén',
-      toUnit: 'Sucursal Cochabamba',
-      toResponsible: 'Juan Pérez',
-      date: new Date(),
-      status: 'Pendiente',
-      reason: 'Reasignación de proyectos',
-    };
-    mockPrisma.transfer.create.mockResolvedValue(createdRecord);
+    const asset = new Asset(
+      'asset-100',
+      'QR-TRANS-01',
+      'Servidor Rack HP',
+      AssetStatus.OPERATIVO,
+      'Oficina TI Central',
+      new Date(),
+    );
+    await assetRepo.save(asset);
 
     const command = {
       assetId: 'asset-100',
@@ -72,12 +67,10 @@ describe('TransferAssetService', () => {
     expect(result.toUnit).toBe('Sucursal Cochabamba');
     expect(result.toResponsible).toBe('Juan Pérez');
     expect(result.status).toBe('Pendiente');
-    expect(mockPrisma.transfer.create).toHaveBeenCalled();
+    expect(fakeTransferRepo.save).toHaveBeenCalled();
   });
 
   it('debería lanzar NotFoundException si el activo no existe', async () => {
-    mockPrisma.$queryRaw.mockResolvedValue([]);
-
     await expect(
       service.execute({
         assetId: 'non-existent',
@@ -90,14 +83,15 @@ describe('TransferAssetService', () => {
   });
 
   it('debería lanzar ConflictException si el activo se encuentra en estado DADO_DE_BAJA', async () => {
-    mockPrisma.$queryRaw.mockResolvedValue([
-      {
-        id: 'asset-101',
-        name: 'Monitor Antiguo',
-        status: AssetStatus.DADO_DE_BAJA,
-        location: 'Almacén',
-      },
-    ]);
+    const asset = new Asset(
+      'asset-101',
+      'QR-TRANS-02',
+      'Monitor Antiguo',
+      AssetStatus.DADO_DE_BAJA,
+      'Almacén',
+      new Date(),
+    );
+    await assetRepo.save(asset);
 
     await expect(
       service.execute({
