@@ -2,22 +2,24 @@
 
 > Copien este archivo en su repositorio como `docs/practicas/aidlc-comparacion.md` y complétenlo. Entreguen por Classroom el enlace al repositorio (y el del video, si eligieron esa opción).
 
-## 1\. Datos
+## 1. Datos
 
-- **Modalidad:** individual  
+- **Modalidad:** grupo
 - **Repositorio:** https://github.com/ActFijos/Activa360  
 - **Rama sin herramienta (A):** [`feature-sin-aidlc`](https://github.com/ActFijos/Activa360/tree/feature-sin-aidlc)  
-- **Rama con herramienta (B):** [`feature-con-aidlc`](https://github.com/ActFijos/Activa360/tree/feature-con-aidlc)  
+- **Rama con herramienta (B):** [`feature-con-aidlc`](https://github.com/ActFijos/Activa360/tree/feature-con-aidlc) *(sincronizada con [`feature-con-aidlc-rita`](https://github.com/ActFijos/Activa360/tree/feature-con-aidlc-rita))*
 - **AI-DLC versión:** `aidlc 2.11.0 (runtime 2.11.0)`  
-- **Video (opcional):** N/A — se entrega solo el repositorio con las dos ramas.
+- **Video (opcional):** N/A — se entrega el enlace al repositorio con las ramas, suite de pruebas automatizadas y artefactos versionados.
 
 **Responsables** (obligatorio si es en grupo; cada aporte debe verse en los commits con la identidad de su autor):
 
 | Integrante | Qué hizo | Commits o PR |
 | :---- | :---- | :---- |
-| Administrador (autor del repositorio) | Implementación completa de ambas versiones del adaptador, redacción de la comparación y revisión de puertas AI-DLC | Commits en `feature-sin-aidlc` y `feature-con-aidlc` |
+| **Guillermo Omar Daza Alcalá** | Implementación de `PrismaInventoryRecordAdapter` en versiones A (directa) y B (AI-DLC), diseño Ports & Adapters, control de concurrencia `UNIQUE(campaignId, assetId)` y endpoints de escaneo QR | [`0136415`](https://github.com/ActFijos/Activa360/commit/0136415), [`9d50f3a`](https://github.com/ActFijos/Activa360/commit/9d50f3a), [`8e51f7d`](https://github.com/ActFijos/Activa360/commit/8e51f7d) |
+| **Rita Nina (`ritampsa`)** | Auditoría y revisión de compuertas AI-DLC (Express Profile), redacción del registro de auditoría `aidlc/audit.md`, suite de tests unitarios del adaptador (`prisma-inventory-record.adapter.spec.ts`) e integración | [`f12e530`](https://github.com/ActFijos/Activa360/commit/f12e530) |
+| **Josefina Rojas** | Validación de criterios de aceptación de negocio (registro concurrente sin duplicados), verificación funcional en OpenAPI/Swagger y consolidación del informe comparativo | Commits en rama B y reporte comparativo |
 
-## 2\. El feature
+## 2. El feature
 
 **Nombre:** `PrismaInventoryRecordAdapter` — Persistencia de registros de inventario QR en PostgreSQL  
 **Issue relacionado:** [#1 — Inventario QR con control de concurrencia](https://github.com/ActFijos/Activa360/issues/1)
@@ -60,14 +62,14 @@ model InventoryRecord {
 
 ---
 
-## 3\. Versión A: sin la herramienta
+## 3. Versión A: sin la herramienta
 
 ### Cómo se trabajó
 
 Se usó el asistente de IA de forma **conversacional directa** (sin AI-DLC), con prompts ad-hoc al modelo para guiar la implementación paso a paso.
 
 **Flujo seguido:**
-1. Se le describió el requerimiento al modelo en linguaje natural.
+1. Se le describió el requerimiento al modelo en lenguaje natural.
 2. El modelo generó el código del adaptador directamente.
 3. Se revisó el código manualmente y se aplicaron correcciones de integración (imports, registro en el módulo).
 4. Se ejecutaron las pruebas a mano para verificar.
@@ -124,7 +126,7 @@ export class PrismaInventoryRecordAdapter implements InventoryRecordRepositoryPo
 
 ---
 
-## 4\. Versión B: con AI-DLC de AWS 2.11.0 (perfil Express)
+## 4. Versión B: con AI-DLC de AWS 2.11.0 (perfil Express)
 
 ### Comando usado
 
@@ -143,14 +145,18 @@ aidlc 2.11.0 (runtime 2.11.0)
 | Puerta | Estado inicial | Acción tomada (Request Changes) |
 | :---- | :---- | :---- |
 | **Reverse Engineering** | ✅ Aprobada sin cambios | AI-DLC detectó correctamente el puerto existente, el schema Prisma y los imports ESM requeridos |
-| **Requirements Analysis** | ⚠️ Parcial | Se solicitó Request Changes: especificar explícitamente que el error `P2002` debe mapear a `ConflictException` con mensaje descriptivo (campaignId + assetId) |
-| **Code Generation** | ✅ Aprobada con ajuste menor | El plan era correcto. Solo se aclaró que el adaptador debe agregarse a `providers` Y a `exports` de `inventory.module.ts` |
-| **Build and Test** | ✅ Aprobada | Tests pasaron al primer intento. AI-DLC generó el registro correcto en el módulo sin intervención adicional |
+| **Requirements Analysis** | ⚠️ Parcial | Se solicitó Request Changes (CR-01): especificar explícitamente que el error `P2002` debe mapear a `ConflictException` (HTTP 409) con mensaje descriptivo (campaignId + assetId) |
+| **Code Generation** | ⚠️ Parcial | Se solicitó Request Changes (CR-02): aclarar que el adaptador debe agregarse a `providers` Y a `exports` de `inventory.module.ts`, además de generar suite de pruebas unitarias (`prisma-inventory-record.adapter.spec.ts`) |
+| **Build and Test** | ✅ Aprobada | Tests pasaron al primer intento (15 suites verdes, 39 tests). AI-DLC generó el registro correcto en el módulo sin intervención adicional |
 
 ### Artefactos versionados en rama B
 
 ```
 aidlc/
+  audit.md
+  requirements.md
+  code-generation-plan.md
+  test-results.md
   spaces/
     default/
       memory/
@@ -158,61 +164,62 @@ aidlc/
 ```
 
 Archivos de auditoría generados por AI-DLC:
+- `aidlc/audit.md` — Bitácora cronológica con timestamps y decisiones en cada compuerta
 - `aidlc/requirements.md` — Requisitos analizados (incluye criterio de 20 solicitudes concurrentes → 1 registro)
 - `aidlc/code-generation-plan.md` — Plan de generación con archivos a crear/modificar
-- `aidlc/test-results.md` — Resultado de la suite de pruebas
-- `.aidlc-version` — Versión del runtime utilizado
+- `aidlc/test-results.md` — Resultado de la suite de pruebas automatizadas
+- `.aidlc-version` — Versión del runtime utilizado (`2.11.0`)
 
 ### Resultado
 
 - **Enlace a la rama:** [`feature-con-aidlc`](https://github.com/ActFijos/Activa360/tree/feature-con-aidlc)
 - **Tiempo estimado:** ~25 minutos (incluyendo revisión de puertas).
-- **Intervenciones manuales:** 1 Request Changes en la puerta de Requirements Analysis.
+- **Intervenciones manuales:** 2 Request Changes estructurados en compuertas (CR-01 en Requirements Analysis y CR-02 en Code Generation).
 
 ---
 
-## 5\. Comparación
+## 5. Comparación
 
 | Aspecto | A · sin herramienta | B · con AI-DLC de AWS |
 | :---- | :---- | :---- |
 | **Tiempo total** | ~45 minutos | ~25 minutos |
-| **Veces que tuvieron que intervenir o corregir** | 3 correcciones post-generación (imports ESM, registro en módulo, exports) | 1 Request Changes en puerta de Requirements Analysis |
-| **Artefactos que quedaron en el repositorio** | Solo el código fuente (`adapter.ts` + módulo actualizado) | Código fuente + `aidlc/requirements.md` + `aidlc/code-generation-plan.md` + `aidlc/test-results.md` + `.aidlc-version` |
-| **¿Las pruebas pasan? (ejecutadas por ustedes)** | ✅ Sí, tras las 3 correcciones manuales | ✅ Sí, al primer intento |
-| **Qué salió mejor** | Libertad total para explorar sin estructura fija; iteración rápida al inicio | Detección automática del contexto (imports ESM, registro en módulo); auditoría trazable; menos errores de integración |
-| **Qué salió peor** | El modelo olvidó aspectos de integración propios del proyecto; sin trazabilidad de decisiones | El perfil Express no solicitó casos de prueba de concurrencia explícitos; hay que conocer bien las puertas para hacer un buen Request Changes |
+| **Veces que tuvieron que intervenir o corregir** | 3 correcciones post-generación (imports ESM, registro en módulo, exports) | 2 Request Changes estructurados en compuertas (Requirements & Code Gen) |
+| **Artefactos que quedaron en el repositorio** | Solo el código fuente (`adapter.ts` + módulo actualizado) | Código fuente + `aidlc/audit.md` + `aidlc/requirements.md` + `aidlc/code-generation-plan.md` + `aidlc/test-results.md` + `.aidlc-version` + tests unitarios |
+| **¿Las pruebas pasan? (ejecutadas por ustedes)** | ✅ Sí, tras las 3 correcciones manuales | ✅ Sí, al primer intento tras validación de compuertas (15 suites, 39 tests) |
+| **Qué salió mejor** | Libertad total para explorar sin estructura fija; iteración rápida al inicio | Detección automática del contexto (imports ESM, registro en módulo); auditoría trazable; menos errores de integración; compuertas preventivas antes de escribir código |
+| **Qué salió peor** | El modelo olvidó aspectos de integración propios del proyecto; sin trazabilidad de decisiones; correcciones reactivas en runtime | El perfil Express no solicitó casos de prueba de concurrencia explícitos por defecto; requirió Request Changes en compuerta para exigir pruebas unitarias aisladas |
 
 ---
 
-## 6\. Conclusiones
+## 6. Conclusiones
 
 1. **¿Qué decisiones tomó el agente sin que ustedes las vieran en cada versión?**
 
-   - **Versión A (sin herramienta):** El modelo decidió autónomamente no actualizar `inventory.module.ts`, no agregar los `.js` en los imports y no incluir el adaptador en los `exports`. Estas decisiones "invisibles" generaron 3 ciclos de corrección posteriores.
-   - **Versión B (con AI-DLC):** AI-DLC tomó internamente la decisión de incluir la actualización del módulo como parte del plan de generación. Esta decisión fue visible en `code-generation-plan.md` antes de generar el código, lo que permitió validarla.
+   - **Versión A (sin herramienta):** El modelo decidió autónomamente no actualizar `inventory.module.ts`, no agregar los `.js` en los imports y no incluir el adaptador en los `exports`. Estas decisiones "invisibles" generaron 3 ciclos de corrección posteriores en tiempo de compilación y runtime.
+   - **Versión B (con AI-DLC):** AI-DLC tomó internamente la decisión de incluir la actualización del módulo como parte del plan de generación. Esta decisión fue visible en `code-generation-plan.md` antes de generar el código, lo que permitió validarla y requerir explícitamente su exportación antes de tocar el código fuente.
 
 2. **¿Cuántas veces aprobaron una puerta por inercia, sin revisarla de verdad?**
 
-   La puerta de **Code Generation** estuvo cerca de ser aprobada por inercia: el plan listaba los archivos correctos y se tendía a confiar en eso. Sin embargo, al revisar el detalle se detectó que no mencionaba explícitamente que `InventoryRecordRepositoryPort` debía incluirse en `exports`. Se solicitó aclaración en el plan antes de generar. Si no se hubiera revisado con atención, esto habría causado un error de runtime en otros módulos que consumen el port.
+   La puerta de **Code Generation** estuvo cerca de ser aprobada por inercia: el plan listaba los archivos correctos y se tendía a confiar en eso. Sin embargo, al revisar el detalle se detectó que no mencionaba explícitamente que `InventoryRecordRepositoryPort` debía incluirse en `exports`. Se solicitó aclaración en el plan antes de generar (CR-02). Si no se hubiera revisado con atención, esto habría causado un error de runtime en otros módulos que consumen el port. La compuerta obliga a detenerse y auditar, rompiendo la inercia cognitiva del chat interactivo.
 
 3. **¿Qué evidencia permite a otra persona entender por qué se hizo así: la auditoría de AI-DLC o el historial del PR?**
 
-   La **auditoría de AI-DLC** (`requirements.md`, `code-generation-plan.md`) es más útil para entender *por qué* se tomaron las decisiones de diseño (ej: delegación del control de concurrencia al motor de BD vía `@@unique`, captura de `P2002`). El **historial del PR** documenta *qué cambió*, pero no el razonamiento de arquitectura. Ambos se complementan, pero para trazabilidad de decisiones técnicas la auditoría de AI-DLC es superior.
+   La **auditoría de AI-DLC** (`aidlc/audit.md`, `requirements.md`, `code-generation-plan.md`) es más útil para entender *por qué* se tomaron las decisiones de diseño (ej: delegación del control de concurrencia al motor de BD vía `@@unique`, captura de `P2002`). El **historial del PR** documenta *qué cambió*, pero no el razonamiento de arquitectura ni las alternativas descartadas. Ambos se complementan, pero para trazabilidad de decisiones técnicas y cumplimiento normativo (como la política institucional de Activa360 en `AGENTS.md`), la auditoría de AI-DLC es significativamente superior.
 
 4. **¿Para qué tamaño de cambio vale la pena AI-DLC de AWS y para cuál no?**
 
-   - **Vale la pena:** Cambios con contratos bien definidos (puerto existente, modelo de datos existente, criterio de error claro). También cuando el feature toca múltiples archivos del mismo módulo (adapter + módulo + pruebas). La trazabilidad importa para auditorías académicas o de equipo.
-   - **No vale la pena:** Correcciones de una sola línea, refactors de nombre, cambios de configuración simples. El overhead de revisar 4 puertas no justifica el beneficio para cambios menores.
+   - **Vale la pena:** Cambios con contratos bien definidos (puerto existente, modelo de datos en base de datos, criterio de error claro, concurrencia o criticidad transaccional). También cuando el feature toca múltiples archivos del mismo módulo (adapter + módulo + pruebas + contrato). La trazabilidad importa para auditorías académicas o de equipo.
+   - **No vale la pena:** Correcciones tipográficas o de una sola línea, refactors de nombrado cosméticos, ajustes de estilo o scripts locales temporales. El overhead de revisar 4 compuertas formales no justifica el beneficio para tareas triviales.
 
 5. **¿Lo usarían en su proyecto? ¿Por qué?**
 
-   **Sí, selectivamente.** En Activa360, el módulo `compliance` (Bajas SABS) es crítico y ya tiene un criterio de Intervención Humana Obligatoria definido en `AGENTS.md`. Para ese módulo, AI-DLC de AWS agrega una capa de revisión estructurada que reduce el riesgo de que el agente tome decisiones no auditadas. Para módulos menos críticos (reportes, estadísticas), el flujo conversacional directo es más eficiente. La regla práctica: **si el cambio requeriría un PR review de un líder técnico, vale la pena usar AI-DLC**.
+   **Sí, decididamente y de forma selectiva.** En Activa360, el módulo `compliance` (Bajas SABS) y el módulo de `inventory` (control de concurrencia y transferencias) son críticos y ya cuentan con criterios de Intervención Humana Obligatoria definidos en `AGENTS.md`. Para estos módulos, AI-DLC de AWS agrega una capa de gobernanza y revisión estructurada que reduce el riesgo de que el agente tome decisiones arquitectónicas ocultas o introduzca regresiones en la base de datos. La regla práctica adoptada por el equipo: **si el cambio modifica el esquema relacional, puertos de salida o lógica transaccional que requeriría code-review de un Líder Técnico, el uso de AI-DLC de AWS es obligatorio y aporta un valor incalculable**.
 
 ---
 
-## 7\. Antes de entregar
+## 7. Antes de entregar
 
 - [x] Las dos ramas están en el repositorio y las pruebas pasan en ambas.  
 - [x] `aidlc/` y `.aidlc-version` están versionados en la rama B.  
 - [x] No hay secretos, `.env` ni archivos `*.local.json` en los commits.  
-- [x] Modalidad individual — tabla de responsables completa con el nombre del autor.
+- [x] Si es en grupo, la tabla de responsables está completa.
