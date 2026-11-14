@@ -4,18 +4,19 @@
 
 ## 1\. Datos
 
-- **Modalidad:** individual  
+- **Modalidad:** grupo / individual
 - **Repositorio:** https://github.com/ActFijos/Activa360  
 - **Rama sin herramienta (A):** [`feature-sin-aidlc`](https://github.com/ActFijos/Activa360/tree/feature-sin-aidlc)  
-- **Rama con herramienta (B):** [`feature-con-aidlc`](https://github.com/ActFijos/Activa360/tree/feature-con-aidlc)  
+- **Rama con herramienta (B):** [`feature-con-aidlc-rita`](https://github.com/ActFijos/Activa360/tree/feature-con-aidlc-rita)  
 - **AI-DLC versión:** `aidlc 2.11.0 (runtime 2.11.0)`  
-- **Video (opcional):**
+- **Video (opcional):** N/A — se entrega solo el repositorio con las ramas.
 
 **Responsables** (obligatorio si es en grupo; cada aporte debe verse en los commits con la identidad de su autor):
 
 | Integrante | Qué hizo | Commits o PR |
 | :---- | :---- | :---- |
-| Guillermo Omar Daza Alcalá | Implementación completa de ambas versiones del adaptador | [0136415](https://github.com/ActFijos/Activa360/commit/0136415), [9d50f3a](https://github.com/ActFijos/Activa360/commit/9d50f3a) |
+| Guillermo Omar Daza Alcalá | Implementación de versiones iniciales del adaptador y estructura de branches | [0136415](https://github.com/ActFijos/Activa360/commit/0136415), [9d50f3a](https://github.com/ActFijos/Activa360/commit/9d50f3a) |
+| Rita Nina (`ritampsa`) | Revisión y auditoría de puertas AI-DLC, suite de tests unitarios/integración, corrección de mocks y reporte comparativo | Commits en `feature-con-aidlc-rita` |
 
 ## 2\. El feature
 
@@ -212,7 +213,7 @@ Archivos de auditoría generados por AI-DLC:
 
 ## 7\. Antes de entregar
 
-- [ ] Las dos ramas están en el repositorio y las pruebas pasan en ambas.  
-- [ ] `aidlc/` y `.aidlc-version` están versionados en la rama B.  
-- [ ] No hay secretos, `.env` ni archivos `*.local.json` en los commits.  
-- [ ] Si es en grupo, la tabla de responsables está completa.
+- [x] Las dos ramas están en el repositorio y las pruebas pasan en ambas.  
+- [x] `aidlc/` y `.aidlc-version` están versionados en la rama B.  
+- [x] No hay secretos, `.env` ni archivos `*.local.json` en los commits.  
+- [x] Modalidad individual — tabla de responsables completa con el nombre del autor.

@@ -9,6 +9,7 @@ import { InMemoryAssetRepository } from './adapters/out/persistence/in-memory-as
 import { InMemoryMovementRepository } from './adapters/out/persistence/in-memory-movement.repository';
 import { Asset, AssetStatus } from './domain/models/asset.model';
 import { Transfer } from './domain/models/transfer.model';
+import { PrismaService } from '../compliance/adapters/out/db/prisma.service';
 
 describe('Flujo de Integración 1: Ciclo Completo de Inventario y Movilidad', () => {
   let scanQrService: ScanQrService;
@@ -17,6 +18,7 @@ describe('Flujo de Integración 1: Ciclo Completo de Inventario y Movilidad', ()
   let movementRepo: InMemoryMovementRepository;
   let fakeTransferRepo: jest.Mocked<TransferRepositoryPort>;
   let fakeAssignmentRepo: jest.Mocked<AssignmentRepositoryPort>;
+  let mockPrisma: any;
 
   beforeEach(async () => {
     const savedTransfers: Transfer[] = [];
@@ -38,6 +40,47 @@ describe('Flujo de Integración 1: Ciclo Completo de Inventario y Movilidad', ()
       findAll: jest.fn().mockResolvedValue([]),
     };
 
+    mockPrisma = {
+      $transaction: jest.fn().mockImplementation(async (callback) => {
+        return callback(mockPrisma);
+      }),
+      $queryRaw: jest.fn().mockImplementation(async () => {
+        const found = await assetRepo.findById('asset-flow-1');
+        if (!found) return [];
+        return [
+          {
+            id: found.id,
+            name: found.name,
+            status: found.status,
+            location: found.location,
+          },
+        ];
+      }),
+      asset: {
+        update: jest.fn().mockResolvedValue({}),
+      },
+      assignment: {
+        findFirst: jest.fn().mockResolvedValue(null),
+      },
+      transfer: {
+        create: jest.fn().mockImplementation(async ({ data }) => {
+          const trans = new Transfer(
+            'trans-flow-1',
+            data.assetId,
+            data.fromUnit,
+            data.fromResponsible,
+            data.toUnit,
+            data.toResponsible,
+            new Date(),
+            data.status,
+            data.reason,
+          );
+          await fakeTransferRepo.save(trans);
+          return trans;
+        }),
+      },
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         ScanQrService,
@@ -46,6 +89,7 @@ describe('Flujo de Integración 1: Ciclo Completo de Inventario y Movilidad', ()
         { provide: MovementRepositoryPort, useClass: InMemoryMovementRepository },
         { provide: TransferRepositoryPort, useValue: fakeTransferRepo },
         { provide: AssignmentRepositoryPort, useValue: fakeAssignmentRepo },
+        { provide: PrismaService, useValue: mockPrisma },
       ],
     }).compile();
 
