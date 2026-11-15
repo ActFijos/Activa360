@@ -8,6 +8,8 @@ import { InventoryAdapter } from './adapters/out/inventory/inventory.adapter';
 import { InitiateBajaController } from './adapters/in/web/initiate-baja.controller';
 import { PrismaService } from './adapters/out/db/prisma.service.js';
 import { PrismaBajaAdapter } from './adapters/out/db/prisma-baja.adapter.js';
+import { GenerateActaPdfUseCase } from './domain/ports/in/generate-acta-pdf.use-case.js';
+import { GenerateActaPdfService } from './domain/services/generate-acta-pdf.service.js';
 
 @Module({
   imports: [InventoryModule],
@@ -17,6 +19,10 @@ import { PrismaBajaAdapter } from './adapters/out/db/prisma-baja.adapter.js';
     {
       provide: InitiateBajaUseCase,
       useClass: InitiateBajaService,
+    },
+    {
+      provide: GenerateActaPdfUseCase,
+      useClass: GenerateActaPdfService,
     },
     {
       provide: BajaRepositoryPort,
@@ -29,6 +35,7 @@ import { PrismaBajaAdapter } from './adapters/out/db/prisma-baja.adapter.js';
   ],
   exports: [
     InitiateBajaUseCase,
+    GenerateActaPdfUseCase,
     BajaRepositoryPort,
     AssetServicePort,
     PrismaService,

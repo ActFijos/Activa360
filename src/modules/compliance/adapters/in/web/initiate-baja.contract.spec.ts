@@ -3,6 +3,7 @@ import { INestApplication, ValidationPipe } from '@nestjs/common';
 import request from 'supertest';
 import { InitiateBajaController } from './initiate-baja.controller';
 import { InitiateBajaUseCase } from '../../../domain/ports/in/initiate-baja.use-case';
+import { GenerateActaPdfUseCase } from '../../../domain/ports/in/generate-acta-pdf.use-case';
 import { PrismaService } from '../../out/db/prisma.service';
 import { Baja, BajaStatus } from '../../../domain/models/baja.model';
 
@@ -62,6 +63,10 @@ describe('Test de Contrato: POST /bajas (Capa 3)', () => {
       controllers: [InitiateBajaController],
       providers: [
         { provide: InitiateBajaUseCase, useValue: fakeInitiateBajaUseCase },
+        {
+          provide: GenerateActaPdfUseCase,
+          useValue: { execute: jest.fn() },
+        },
         { provide: PrismaService, useValue: fakePrismaService },
       ],
     }).compile();

@@ -10,16 +10,20 @@ import {
   ValidationPipe,
   NotFoundException,
   Inject,
+  Res,
 } from '@nestjs/common';
+import type { Response } from 'express';
 import { InitiateBajaUseCase } from '../../../domain/ports/in/initiate-baja.use-case';
 import { InitiateBajaDto } from './dto/initiate-baja.dto';
 import { PrismaService } from '../../out/db/prisma.service';
+import { GenerateActaPdfUseCase } from '../../../domain/ports/in/generate-acta-pdf.use-case';
 
 @Controller('bajas')
 export class InitiateBajaController {
   constructor(
     @Inject(InitiateBajaUseCase) private readonly initiateBajaUseCase: InitiateBajaUseCase,
     @Inject(PrismaService) private readonly prisma: PrismaService,
+    @Inject(GenerateActaPdfUseCase) private readonly generateActaPdf: GenerateActaPdfUseCase,
   ) {}
 
   @Post()
@@ -104,5 +108,20 @@ export class InitiateBajaController {
       success: true,
       message: 'Baja rechazada y activo restaurado a revisión técnica',
     };
+  }
+
+  @Get(':id/acta-pdf')
+  async downloadActaPdf(
+    @Param('id') id: string,
+    @Res() res: Response,
+  ): Promise<void> {
+    const { buffer, filename } = await this.generateActaPdf.execute(id);
+
+    res.set({
+      'Content-Type': 'application/pdf',
+      'Content-Disposition': `attachment; filename="${filename}"`,
+      'Content-Length': buffer.length,
+    });
+    res.end(buffer);
   }
 }

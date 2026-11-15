@@ -3,13 +3,18 @@ import { InitiateBajaController } from './initiate-baja.controller';
 import { InitiateBajaUseCase } from '../../../domain/ports/in/initiate-baja.use-case';
 import { Baja, BajaStatus } from '../../../domain/models/baja.model';
 import { PrismaService } from '../../out/db/prisma.service';
+import { GenerateActaPdfUseCase } from '../../../domain/ports/in/generate-acta-pdf.use-case';
 
 describe('InitiateBajaController', () => {
   let controller: InitiateBajaController;
   let fakeInitiateBajaUseCase: jest.Mocked<InitiateBajaUseCase>;
+  let fakeGenerateActaPdfUseCase: jest.Mocked<GenerateActaPdfUseCase>;
 
   beforeEach(async () => {
     fakeInitiateBajaUseCase = {
+      execute: jest.fn(),
+    };
+    fakeGenerateActaPdfUseCase = {
       execute: jest.fn(),
     };
 
@@ -19,6 +24,10 @@ describe('InitiateBajaController', () => {
         {
           provide: InitiateBajaUseCase,
           useValue: fakeInitiateBajaUseCase,
+        },
+        {
+          provide: GenerateActaPdfUseCase,
+          useValue: fakeGenerateActaPdfUseCase,
         },
         {
           provide: PrismaService,
@@ -69,5 +78,28 @@ describe('InitiateBajaController', () => {
       dto.evidence,
     );
     expect(result).toEqual(mockBaja);
+  });
+
+  it('should call execute on GenerateActaPdfUseCase and stream PDF', async () => {
+    const fakeBuffer = Buffer.from('%PDF-1.4 mock content');
+    fakeGenerateActaPdfUseCase.execute.mockResolvedValue({
+      buffer: fakeBuffer,
+      filename: 'Acta-Baja-SABS-TEST.pdf',
+    });
+
+    const resMock = {
+      set: jest.fn(),
+      end: jest.fn(),
+    } as any;
+
+    await controller.downloadActaPdf('baja-uuid-1', resMock);
+
+    expect(fakeGenerateActaPdfUseCase.execute).toHaveBeenCalledWith('baja-uuid-1');
+    expect(resMock.set).toHaveBeenCalledWith({
+      'Content-Type': 'application/pdf',
+      'Content-Disposition': 'attachment; filename="Acta-Baja-SABS-TEST.pdf"',
+      'Content-Length': fakeBuffer.length,
+    });
+    expect(resMock.end).toHaveBeenCalledWith(fakeBuffer);
   });
 });

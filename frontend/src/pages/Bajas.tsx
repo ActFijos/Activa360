@@ -326,6 +326,33 @@ export const Bajas: React.FC = () => {
     window.print();
   };
 
+  const handleDownloadPdf = async (id: string) => {
+    try {
+      const res = await fetch(`http://localhost:3000/bajas/${id}/acta-pdf`);
+      if (!res.ok) {
+        let msg = 'Error al descargar el acta en PDF.';
+        try {
+          const err = await res.json();
+          msg = err.message || msg;
+        } catch (_) {}
+        alert(msg);
+        return;
+      }
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Acta-Baja-${id.substring(0, 8).toUpperCase()}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (e) {
+      console.error(e);
+      alert('Error de conexión al descargar el PDF.');
+    }
+  };
+
   // Autocomplete filtering
   const filteredAssets = searchAssetQuery.trim() === ''
     ? []
@@ -423,13 +450,22 @@ export const Bajas: React.FC = () => {
                 )}
 
                 {baja.status === 'APROBADA' && (
-                  <button
-                    onClick={() => setActiveActa(baja)}
-                    className="btn-primary"
-                    style={{ padding: '4px 10px', fontSize: '0.75rem', backgroundColor: '#1e88e5', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
-                  >
-                    📄 Acta de Baja
-                  </button>
+                  <div style={{ display: 'flex', gap: '0.5rem' }}>
+                    <button
+                      onClick={() => setActiveActa(baja)}
+                      className="btn-secondary"
+                      style={{ padding: '4px 8px', fontSize: '0.75rem', backgroundColor: '#e3f2fd', color: '#1565c0', border: '1px solid #90caf9', borderRadius: '4px', cursor: 'pointer' }}
+                    >
+                      👁️ Ver Acta
+                    </button>
+                    <button
+                      onClick={() => handleDownloadPdf(baja.id)}
+                      className="btn-primary"
+                      style={{ padding: '4px 10px', fontSize: '0.75rem', backgroundColor: '#1e88e5', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}
+                    >
+                      ⬇️ Descargar PDF
+                    </button>
+                  </div>
                 )}
               </div>
             </article>
@@ -622,8 +658,11 @@ export const Bajas: React.FC = () => {
                 <button type="button" className="btn-secondary" onClick={() => setActiveActa(null)} style={{ padding: '0.5rem 1rem', backgroundColor: '#c62828', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
                   Cerrar
                 </button>
-                <button type="button" className="btn-primary" onClick={triggerPrint} style={{ padding: '0.5rem 1.25rem', backgroundColor: '#2e7d32', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>
-                  🖨️ Imprimir Acta (PDF)
+                <button type="button" className="btn-secondary" onClick={triggerPrint} style={{ padding: '0.5rem 1rem', backgroundColor: '#f5f5f5', color: '#333', border: '1px solid #ccc', borderRadius: '4px', cursor: 'pointer' }}>
+                  🖨️ Imprimir
+                </button>
+                <button type="button" className="btn-primary" onClick={() => handleDownloadPdf(activeActa.id)} style={{ padding: '0.5rem 1.25rem', backgroundColor: '#1e88e5', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>
+                  ⬇️ Descargar PDF Oficial
                 </button>
               </div>
             </div>
