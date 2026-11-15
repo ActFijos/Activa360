@@ -18,6 +18,7 @@ const bajaSchema = z.object({
 
 interface Baja {
   id: string;
+  assetId: string;
   date: string;
   description: string;
   code: string;
@@ -27,6 +28,7 @@ interface Baja {
   approvedBy: string;
   status: string;
   evidence: string;
+  motivoRechazo?: string | null;
 }
 
 interface Employee {
@@ -44,6 +46,13 @@ interface Asset {
   location: string;
 }
 
+interface PaginationMeta {
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
 export const Bajas: React.FC = () => {
   const [bajas, setBajas] = useState<Baja[]>([]);
   const [assets, setAssets] = useState<Asset[]>([]);
@@ -53,6 +62,28 @@ export const Bajas: React.FC = () => {
 
   // Print state
   const [activeActa, setActiveActa] = useState<Baja | null>(null);
+
+  // Feature 1: Filter states
+  const [filterEstado, setFilterEstado] = useState<string>('');
+  const [filterActivo, setFilterActivo] = useState<string>('');
+  const [filterFechaDesde, setFilterFechaDesde] = useState<string>('');
+  const [filterFechaHasta, setFilterFechaHasta] = useState<string>('');
+
+  // Feature 2: Pagination states
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [limitPerPage, setLimitPerPage] = useState<number>(10);
+  const [paginationMeta, setPaginationMeta] = useState<PaginationMeta>({
+    total: 0,
+    page: 1,
+    limit: 10,
+    totalPages: 1,
+  });
+
+  // Feature 3: Rejection modal state
+  const [rejectingBaja, setRejectingBaja] = useState<Baja | null>(null);
+  const [motivoRechazoInput, setMotivoRechazoInput] = useState<string>('');
+  const [rejectModalError, setRejectModalError] = useState<string | null>(null);
+  const [isSubmittingReject, setIsSubmittingReject] = useState<boolean>(false);
 
   // Form search and selection states
   const [searchAssetQuery, setSearchAssetQuery] = useState('');
@@ -72,15 +103,37 @@ export const Bajas: React.FC = () => {
 
   const loadData = async () => {
     try {
+      const queryParams = new URLSearchParams();
+      if (filterEstado) queryParams.append('estado', filterEstado);
+      if (filterActivo.trim()) queryParams.append('activo', filterActivo.trim());
+      if (filterFechaDesde) queryParams.append('fechaDesde', new Date(filterFechaDesde + 'T00:00:00.000Z').toISOString());
+      if (filterFechaHasta) queryParams.append('fechaHasta', new Date(filterFechaHasta + 'T23:59:59.999Z').toISOString());
+      queryParams.append('page', currentPage.toString());
+      queryParams.append('limit', limitPerPage.toString());
+
       const [assetsRes, employeesRes, bajasRes] = await Promise.all([
         fetch('http://localhost:3000/activos'),
         fetch('http://localhost:3000/activos/empleados'),
-        fetch('http://localhost:3000/bajas'),
+        fetch(`http://localhost:3000/bajas?${queryParams.toString()}`),
       ]);
 
       let bajasData: any[] = [];
       if (bajasRes.ok) {
-        bajasData = await bajasRes.json();
+        const json = await bajasRes.json();
+        if (Array.isArray(json)) {
+          bajasData = json;
+          setPaginationMeta({
+            total: json.length,
+            page: 1,
+            limit: json.length || 10,
+            totalPages: 1,
+          });
+        } else if (json && json.data) {
+          bajasData = json.data;
+          if (json.meta) {
+            setPaginationMeta(json.meta);
+          }
+        }
       }
 
       let allAssets: Asset[] = [];
@@ -123,6 +176,7 @@ export const Bajas: React.FC = () => {
 
           return {
             id: b.id,
+            assetId: b.assetId,
             date: dateStr,
             description: assetObj ? assetObj.name : 'Activo Desconocido',
             code: assetObj ? assetObj.qrCode : 'S/QR',
@@ -131,7 +185,8 @@ export const Bajas: React.FC = () => {
             reason: b.justification,
             approvedBy: jefeObj ? jefeObj.fullName : 'Supervisor Autorizado',
             status: b.status,
-            evidence: b.evidence
+            evidence: b.evidence,
+            motivoRechazo: b.motivoRechazo || null,
           };
         });
         setBajas(mapped);
@@ -145,7 +200,15 @@ export const Bajas: React.FC = () => {
 
   useEffect(() => {
     loadData();
-  }, []);
+  }, [filterEstado, filterActivo, filterFechaDesde, filterFechaHasta, currentPage, limitPerPage]);
+
+  const handleClearFilters = () => {
+    setFilterEstado('');
+    setFilterActivo('');
+    setFilterFechaDesde('');
+    setFilterFechaHasta('');
+    setCurrentPage(1);
+  };
 
   const validateField = (name: string, value: any) => {
     try {
@@ -304,21 +367,52 @@ export const Bajas: React.FC = () => {
     }
   };
 
-  const handleRejectBaja = async (id: string) => {
-    if (!window.confirm('¿Está seguro de rechazar el trámite de baja de este activo? El bien retornará al inventario.')) return;
+  // Feature 3: Open rejection modal
+  const handleOpenRejectModal = (baja: Baja) => {
+    setRejectingBaja(baja);
+    setMotivoRechazoInput('');
+    setRejectModalError(null);
+  };
+
+  const handleCloseRejectModal = () => {
+    setRejectingBaja(null);
+    setMotivoRechazoInput('');
+    setRejectModalError(null);
+  };
+
+  const handleConfirmReject = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!rejectingBaja) return;
+
+    if (!motivoRechazoInput.trim() || motivoRechazoInput.trim().length < 5) {
+      setRejectModalError('El motivo de rechazo es obligatorio y debe tener al menos 5 caracteres.');
+      return;
+    }
+
+    setIsSubmittingReject(true);
+    setRejectModalError(null);
     try {
-      const res = await fetch(`http://localhost:3000/bajas/${id}/rechazar`, {
-        method: 'POST'
+      const res = await fetch(`http://localhost:3000/bajas/${rejectingBaja.id}/rechazar`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          motivoRechazo: motivoRechazoInput.trim(),
+        }),
       });
+
       if (res.ok) {
-        alert('Trámite de baja rechazado.');
-        loadData();
+        handleCloseRejectModal();
+        await loadData();
       } else {
-        alert('Error al rechazar la baja.');
+        const errData = await res.json().catch(() => ({}));
+        setRejectModalError(errData.message || 'Error al procesar el rechazo de la baja.');
       }
-    } catch (e) {
-      console.error(e);
-      alert('Error de conexión.');
+    } catch (e: any) {
+      setRejectModalError(e.message || 'Error de conexión con el servidor.');
+    } finally {
+      setIsSubmittingReject(false);
     }
   };
 
@@ -326,7 +420,34 @@ export const Bajas: React.FC = () => {
     window.print();
   };
 
-  // Autocomplete filtering
+  const handleDownloadPdf = async (id: string) => {
+    try {
+      const res = await fetch(`http://localhost:3000/bajas/${id}/acta-pdf`);
+      if (!res.ok) {
+        let msg = 'Error al descargar el acta en PDF.';
+        try {
+          const err = await res.json();
+          msg = err.message || msg;
+        } catch (_) {}
+        alert(msg);
+        return;
+      }
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Acta-Baja-${id.substring(0, 8).toUpperCase()}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (e) {
+      console.error(e);
+      alert('Error de conexión al descargar el PDF.');
+    }
+  };
+
+  // Autocomplete filtering for form
   const filteredAssets = searchAssetQuery.trim() === ''
     ? []
     : assets.filter(asset =>
@@ -335,101 +456,179 @@ export const Bajas: React.FC = () => {
       );
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
       
-      <div className="action-bar no-print">
+      <div className="action-bar no-print" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div>
           <h1 style={{ margin: 0, fontSize: '1.8rem', color: '#263238', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <span style={{ color: '#d32f2f' }}>⚠️</span> Bajas de Activos Fijos
+            <span style={{ color: '#d32f2f' }}>⚠️</span> Bajas de Activos Fijos (SABS)
           </h1>
-          <p style={{ margin: '0.25rem 0 0 0', color: '#78909c', fontSize: '0.9rem' }}>Registre y gestione los activos dados de baja según normativa SABS</p>
+          <p style={{ margin: '0.25rem 0 0 0', color: '#78909c', fontSize: '0.9rem' }}>
+            Registro, fiscalización, filtros avanzados y control normativo de bajas patrimoniales
+          </p>
         </div>
-        <button className="btn-primary" onClick={handleOpenModal}>
+        <button className="btn-primary" onClick={handleOpenModal} style={{ backgroundColor: '#d32f2f', color: '#fff', padding: '0.6rem 1.2rem', borderRadius: '6px', border: 'none', cursor: 'pointer', fontWeight: 'bold' }}>
           <span>+</span> Registrar Nueva Baja
         </button>
       </div>
 
       {/* Warning Notice Banner */}
-      <div className="notice-banner no-print" style={{ backgroundColor: '#ffebee', borderLeft: '5px solid #d32f2f', color: '#c62828' }}>
-        <h4>Importante</h4>
-        <p>La baja de un activo es una acción irreversible. Asegúrese de que toda la justificación técnica y el acta de soporte física estén validadas antes de continuar.</p>
+      <div className="notice-banner no-print" style={{ backgroundColor: '#ffebee', borderLeft: '5px solid #d32f2f', padding: '0.75rem 1rem', borderRadius: '4px', color: '#c62828' }}>
+        <h4 style={{ margin: '0 0 0.25rem 0' }}>Normativa D.S. 0181 - SABS</h4>
+        <p style={{ margin: 0, fontSize: '0.85rem' }}>
+          La baja de un activo es definitiva e irreversible. Verifique la justificación contable y peritaje técnico antes de autorizar o rechazar.
+        </p>
+      </div>
+
+      {/* Feature 1: Filter Bar */}
+      <div className="filter-bar no-print" style={{ backgroundColor: '#ffffff', border: '1px solid #cfd8dc', borderRadius: '8px', padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.75rem', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <strong style={{ fontSize: '0.9rem', color: '#37474f' }}>🔍 Filtros de Búsqueda</strong>
+          <button
+            type="button"
+            onClick={handleClearFilters}
+            style={{ fontSize: '0.8rem', color: '#1565c0', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}
+          >
+            Limpiar filtros
+          </button>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '0.75rem' }}>
+          <div>
+            <label style={{ display: 'block', fontSize: '0.75rem', color: '#546e7a', marginBottom: '0.25rem' }}>Estado</label>
+            <select
+              value={filterEstado}
+              onChange={(e) => { setFilterEstado(e.target.value); setCurrentPage(1); }}
+              style={{ width: '100%', padding: '0.45rem', borderRadius: '6px', border: '1px solid #b0bec5', fontSize: '0.85rem' }}
+            >
+              <option value="">Todos los Estados</option>
+              <option value="INICIADA">Iniciada</option>
+              <option value="APROBADA">Aprobada</option>
+              <option value="RECHAZADA">Rechazada</option>
+            </select>
+          </div>
+
+          <div>
+            <label style={{ display: 'block', fontSize: '0.75rem', color: '#546e7a', marginBottom: '0.25rem' }}>Buscar Activo (ID, QR o Nombre)</label>
+            <input
+              type="text"
+              placeholder="Ej: ACT-UMSS-001 o Laptop..."
+              value={filterActivo}
+              onChange={(e) => { setFilterActivo(e.target.value); setCurrentPage(1); }}
+              style={{ width: '100%', padding: '0.45rem', borderRadius: '6px', border: '1px solid #b0bec5', fontSize: '0.85rem' }}
+            />
+          </div>
+
+          <div>
+            <label style={{ display: 'block', fontSize: '0.75rem', color: '#546e7a', marginBottom: '0.25rem' }}>Fecha Desde</label>
+            <input
+              type="date"
+              value={filterFechaDesde}
+              onChange={(e) => { setFilterFechaDesde(e.target.value); setCurrentPage(1); }}
+              style={{ width: '100%', padding: '0.45rem', borderRadius: '6px', border: '1px solid #b0bec5', fontSize: '0.85rem' }}
+            />
+          </div>
+
+          <div>
+            <label style={{ display: 'block', fontSize: '0.75rem', color: '#546e7a', marginBottom: '0.25rem' }}>Fecha Hasta</label>
+            <input
+              type="date"
+              value={filterFechaHasta}
+              onChange={(e) => { setFilterFechaHasta(e.target.value); setCurrentPage(1); }}
+              style={{ width: '100%', padding: '0.45rem', borderRadius: '6px', border: '1px solid #b0bec5', fontSize: '0.85rem' }}
+            />
+          </div>
+        </div>
       </div>
 
       {/* Compliance Write-offs List */}
-      <div className="compliance-list no-print">
+      <div className="compliance-list no-print" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '1rem' }}>
         {bajas.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '3rem', backgroundColor: '#fff', borderRadius: '12px', border: '1px dashed #cfd8dc', color: '#78909c', gridColumn: 'span 2' }}>
-            No se registran trámites de bajas en curso actualmente.
+          <div style={{ textAlign: 'center', padding: '3rem', backgroundColor: '#fff', borderRadius: '12px', border: '1px dashed #cfd8dc', color: '#78909c', gridColumn: '1 / -1' }}>
+            No se encontraron trámites de bajas con los criterios seleccionados.
           </div>
         ) : (
           bajas.map((baja) => (
-            <article key={baja.id} className="compliance-card" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minHeight: '260px' }}>
+            <article key={baja.id} className="compliance-card" style={{ backgroundColor: '#fff', border: '1px solid #eceff1', borderRadius: '8px', padding: '1.25rem', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minHeight: '260px', boxShadow: '0 2px 4px rgba(0,0,0,0.04)' }}>
               <div>
                 <div className="comp-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span className="comp-id" style={{ color: '#d32f2f', fontWeight: 'bold' }}>
+                  <span className="comp-id" style={{ color: '#d32f2f', fontWeight: 'bold', fontSize: '0.9rem' }}>
                     🗑️ BJ-{baja.id.substring(0, 6).toUpperCase()}
                   </span>
                   <span className={`badge`} style={{
-                    backgroundColor: baja.status === 'APROBADA' ? '#e8f5e9' : baja.status === 'RECHAZADA' ? '#ffebee' : '#fff8e1',
-                    color: baja.status === 'APROBADA' ? '#2e7d32' : baja.status === 'RECHAZADA' ? '#c62828' : '#f57f17',
+                    backgroundColor: baja.status === 'APROBADA' || baja.status === 'Aprobada' ? '#e8f5e9' : baja.status === 'RECHAZADA' || baja.status === 'Rechazada' ? '#ffebee' : '#fff8e1',
+                    color: baja.status === 'APROBADA' || baja.status === 'Aprobada' ? '#2e7d32' : baja.status === 'RECHAZADA' || baja.status === 'Rechazada' ? '#c62828' : '#f57f17',
                     border: '1px solid',
-                    borderColor: baja.status === 'APROBADA' ? '#c8e6c9' : baja.status === 'RECHAZADA' ? '#ffcdd2' : '#ffe082',
+                    borderColor: baja.status === 'APROBADA' || baja.status === 'Aprobada' ? '#c8e6c9' : baja.status === 'RECHAZADA' || baja.status === 'Rechazada' ? '#ffcdd2' : '#ffe082',
                     padding: '2px 8px',
                     borderRadius: '4px',
-                    fontSize: '0.75rem'
+                    fontSize: '0.75rem',
+                    fontWeight: 'bold',
                   }}>
                     {baja.status}
                   </span>
                 </div>
                 
-                <p className="comp-description" style={{ fontWeight: 'bold', margin: '0.75rem 0' }}>{baja.code} - {baja.description}</p>
+                <p className="comp-description" style={{ fontWeight: 'bold', margin: '0.75rem 0', color: '#263238' }}>{baja.code} - {baja.description}</p>
                 
-                <div className="comp-details-grid">
+                <div className="comp-details-grid" style={{ fontSize: '0.8rem', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', color: '#546e7a' }}>
                   <div>
-                    <span className="comp-field-label">Unidad de Origen</span>
-                    <span className="comp-field-value">{baja.unit}</span>
+                    <span style={{ display: 'block', fontSize: '0.7rem', color: '#90a4ae' }}>Unidad de Origen</span>
+                    <strong style={{ color: '#37474f' }}>{baja.unit}</strong>
                   </div>
                   <div>
-                    <span className="comp-field-label">Evidencia de Respaldo</span>
-                    <span className="comp-field-value" style={{ fontFamily: 'monospace' }}>{baja.evidence}</span>
+                    <span style={{ display: 'block', fontSize: '0.7rem', color: '#90a4ae' }}>Evidencia SABS</span>
+                    <strong style={{ fontFamily: 'monospace', color: '#37474f' }}>{baja.evidence}</strong>
                   </div>
-                  <div style={{ gridColumn: 'span 2', marginTop: '0.5rem' }}>
-                    <span className="comp-field-label">Justificación Contable</span>
-                    <span className="comp-field-value" style={{ fontStyle: 'italic' }}>"{baja.reason}"</span>
+                  <div style={{ gridColumn: 'span 2', marginTop: '0.25rem' }}>
+                    <span style={{ display: 'block', fontSize: '0.7rem', color: '#90a4ae' }}>Justificación</span>
+                    <span style={{ fontStyle: 'italic', color: '#455a64' }}>"{baja.reason}"</span>
                   </div>
                 </div>
+
+                {/* Feature 3: Rejection Reason Display */}
+                {(baja.status === 'RECHAZADA' || baja.status === 'Rechazada') && baja.motivoRechazo && (
+                  <div style={{ marginTop: '0.75rem', padding: '0.5rem 0.75rem', backgroundColor: '#ffebee', borderLeft: '3px solid #c62828', borderRadius: '4px', fontSize: '0.75rem' }}>
+                    <strong style={{ color: '#c62828', display: 'block' }}>Motivo de Rechazo:</strong>
+                    <span style={{ color: '#b71c1c', fontStyle: 'italic' }}>"{baja.motivoRechazo}"</span>
+                  </div>
+                )}
               </div>
 
-              <div className="comp-footer" style={{ borderTop: '1px solid #ffebee', marginTop: '1rem', paddingTop: '0.75rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: '0.8rem' }}>Autorizador: <strong>{baja.approvedBy}</strong></span>
+              <div className="comp-footer" style={{ borderTop: '1px solid #f5f5f5', marginTop: '1rem', paddingTop: '0.75rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: '0.75rem', color: '#78909c' }}>Supervisor: <strong style={{ color: '#37474f' }}>{baja.approvedBy}</strong></span>
                 
-                {baja.status === 'Iniciada' && (
+                {(baja.status === 'Iniciada' || baja.status === 'INICIADA') && (
                   <div style={{ display: 'flex', gap: '0.5rem' }}>
                     <button
                       onClick={() => handleApproveBaja(baja.id)}
-                      className="btn-primary"
-                      style={{ padding: '4px 8px', fontSize: '0.75rem', backgroundColor: '#2e7d32', color: '#fff', borderRadius: '4px', border: 'none', cursor: 'pointer' }}
+                      style={{ padding: '4px 8px', fontSize: '0.75rem', backgroundColor: '#2e7d32', color: '#fff', borderRadius: '4px', border: 'none', cursor: 'pointer', fontWeight: 'bold' }}
                     >
                       ✔️ Autorizar
                     </button>
                     <button
-                      onClick={() => handleRejectBaja(baja.id)}
-                      className="btn-secondary"
-                      style={{ padding: '4px 8px', fontSize: '0.75rem', backgroundColor: '#c62828', color: '#fff', borderRadius: '4px', border: 'none', cursor: 'pointer' }}
+                      onClick={() => handleOpenRejectModal(baja)}
+                      style={{ padding: '4px 8px', fontSize: '0.75rem', backgroundColor: '#c62828', color: '#fff', borderRadius: '4px', border: 'none', cursor: 'pointer', fontWeight: 'bold' }}
                     >
                       ❌ Rechazar
                     </button>
                   </div>
                 )}
 
-                {baja.status === 'APROBADA' && (
-                  <button
-                    onClick={() => setActiveActa(baja)}
-                    className="btn-primary"
-                    style={{ padding: '4px 10px', fontSize: '0.75rem', backgroundColor: '#1e88e5', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
-                  >
-                    📄 Acta de Baja
-                  </button>
+                {(baja.status === 'APROBADA' || baja.status === 'Aprobada') && (
+                  <div style={{ display: 'flex', gap: '0.4rem' }}>
+                    <button
+                      onClick={() => setActiveActa(baja)}
+                      style={{ padding: '4px 8px', fontSize: '0.75rem', backgroundColor: '#e3f2fd', color: '#1565c0', border: '1px solid #90caf9', borderRadius: '4px', cursor: 'pointer' }}
+                    >
+                      👁️ Ver Acta
+                    </button>
+                    <button
+                      onClick={() => handleDownloadPdf(baja.id)}
+                      style={{ padding: '4px 10px', fontSize: '0.75rem', backgroundColor: '#1e88e5', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}
+                    >
+                      ⬇️ Descargar PDF
+                    </button>
+                  </div>
                 )}
               </div>
             </article>
@@ -437,13 +636,113 @@ export const Bajas: React.FC = () => {
         )}
       </div>
 
-      {/* Modal Dialog */}
+      {/* Feature 2: Pagination Bar */}
+      <div className="pagination-bar no-print" style={{ backgroundColor: '#fff', border: '1px solid #cfd8dc', borderRadius: '8px', padding: '0.75rem 1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.85rem', color: '#546e7a' }}>
+        <div>
+          <span>
+            Mostrando página <strong>{paginationMeta.page}</strong> de <strong>{paginationMeta.totalPages}</strong> ({paginationMeta.total} trámites en total)
+          </span>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+            <span>Por página:</span>
+            <select
+              value={limitPerPage}
+              onChange={(e) => { setLimitPerPage(Number(e.target.value)); setCurrentPage(1); }}
+              style={{ padding: '0.25rem 0.5rem', borderRadius: '4px', border: '1px solid #b0bec5', fontSize: '0.85rem' }}
+            >
+              <option value="5">5</option>
+              <option value="10">10</option>
+              <option value="20">20</option>
+              <option value="50">50</option>
+            </select>
+          </div>
+          <div style={{ display: 'flex', gap: '0.5rem' }}>
+            <button
+              type="button"
+              disabled={paginationMeta.page <= 1}
+              onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+              style={{ padding: '0.35rem 0.75rem', borderRadius: '4px', border: '1px solid #cfd8dc', backgroundColor: paginationMeta.page <= 1 ? '#f5f5f5' : '#fff', color: paginationMeta.page <= 1 ? '#b0bec5' : '#37474f', cursor: paginationMeta.page <= 1 ? 'not-allowed' : 'pointer' }}
+            >
+              ← Anterior
+            </button>
+            <button
+              type="button"
+              disabled={paginationMeta.page >= paginationMeta.totalPages}
+              onClick={() => setCurrentPage(prev => Math.min(paginationMeta.totalPages, prev + 1))}
+              style={{ padding: '0.35rem 0.75rem', borderRadius: '4px', border: '1px solid #cfd8dc', backgroundColor: paginationMeta.page >= paginationMeta.totalPages ? '#f5f5f5' : '#fff', color: paginationMeta.page >= paginationMeta.totalPages ? '#b0bec5' : '#37474f', cursor: paginationMeta.page >= paginationMeta.totalPages ? 'not-allowed' : 'pointer' }}
+            >
+              Siguiente →
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Feature 3: Rejection Modal */}
+      {rejectingBaja && (
+        <div className="modal-overlay" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1500 }}>
+          <form onSubmit={handleConfirmReject} style={{ backgroundColor: '#fff', borderRadius: '8px', padding: '1.75rem', width: '90%', maxWidth: '520px', display: 'flex', flexDirection: 'column', gap: '1rem', boxShadow: '0 8px 24px rgba(0,0,0,0.2)' }}>
+            <div style={{ borderBottom: '1px solid #eceff1', paddingBottom: '0.75rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h3 style={{ margin: 0, color: '#c62828', fontSize: '1.2rem' }}>Rechazar Solicitud de Baja SABS</h3>
+              <button type="button" onClick={handleCloseRejectModal} style={{ background: 'none', border: 'none', fontSize: '1.25rem', cursor: 'pointer', color: '#78909c' }}>&times;</button>
+            </div>
+
+            <div style={{ fontSize: '0.85rem', color: '#546e7a' }}>
+              <p style={{ margin: '0 0 0.5rem 0' }}>
+                Está por rechazar el trámite de baja del activo: <strong>{rejectingBaja.code} - {rejectingBaja.description}</strong>.
+              </p>
+              <p style={{ margin: 0 }}>
+                El bien retornará al inventario con su estado técnico anterior. Ingrese obligatoriamente la justificación del rechazo:
+              </p>
+            </div>
+
+            <div className="form-group">
+              <label style={{ display: 'block', fontWeight: 'bold', fontSize: '0.85rem', marginBottom: '0.35rem', color: '#37474f' }}>
+                Motivo de Rechazo (Mínimo 5 caracteres) *
+              </label>
+              <textarea
+                value={motivoRechazoInput}
+                onChange={(e) => setMotivoRechazoInput(e.target.value)}
+                placeholder="Describa el motivo técnico por el cual no procede la baja..."
+                style={{ width: '100%', minHeight: '90px', padding: '0.6rem', borderRadius: '6px', border: '1px solid #b0bec5', fontSize: '0.85rem' }}
+                required
+              />
+            </div>
+
+            {rejectModalError && (
+              <div style={{ padding: '0.5rem 0.75rem', backgroundColor: '#ffebee', color: '#c62828', borderRadius: '4px', fontSize: '0.8rem' }}>
+                ⚠️ {rejectModalError}
+              </div>
+            )}
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', borderTop: '1px solid #eceff1', paddingTop: '0.75rem' }}>
+              <button
+                type="button"
+                onClick={handleCloseRejectModal}
+                disabled={isSubmittingReject}
+                style={{ padding: '0.5rem 1rem', borderRadius: '4px', border: '1px solid #cfd8dc', backgroundColor: '#fff', cursor: 'pointer' }}
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                disabled={isSubmittingReject}
+                style={{ padding: '0.5rem 1.25rem', borderRadius: '4px', border: 'none', backgroundColor: '#c62828', color: '#fff', fontWeight: 'bold', cursor: isSubmittingReject ? 'not-allowed' : 'pointer' }}
+              >
+                {isSubmittingReject ? 'Procesando...' : 'Confirmar Rechazo'}
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* Modal Dialog Nueva Baja */}
       {isModalOpen && (
-        <div className="modal-overlay">
-          <form className="modal-content" onSubmit={handleSubmit} style={{ maxWidth: '650px', width: '90%' }}>
-            <div className="modal-header" style={{ borderBottom: '1px solid #eceff1', paddingBottom: '1rem' }}>
-              <h3>Registrar Baja de Activo (SABS)</h3>
-              <button type="button" className="close-btn" onClick={handleCloseModal}>&times;</button>
+        <div className="modal-overlay" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1500 }}>
+          <form className="modal-content" onSubmit={handleSubmit} style={{ backgroundColor: '#fff', borderRadius: '8px', padding: '1.75rem', maxWidth: '650px', width: '90%', maxHeight: '90vh', overflowY: 'auto' }}>
+            <div className="modal-header" style={{ borderBottom: '1px solid #eceff1', paddingBottom: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h3 style={{ margin: 0 }}>Registrar Baja de Activo (SABS)</h3>
+              <button type="button" className="close-btn" onClick={handleCloseModal} style={{ background: 'none', border: 'none', fontSize: '1.25rem', cursor: 'pointer', color: '#78909c' }}>&times;</button>
             </div>
 
             <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', marginTop: '1.5rem' }}>
@@ -462,7 +761,7 @@ export const Bajas: React.FC = () => {
                         validateField('assetId', '');
                       }
                     }}
-                    style={{ flexGrow: 1, borderColor: formErrors.assetId ? '#d32f2f' : undefined }}
+                    style={{ flexGrow: 1, padding: '0.5rem', borderRadius: '6px', border: formErrors.assetId ? '1px solid #d32f2f' : '1px solid #b0bec5' }}
                     required
                   />
                   <button 
@@ -503,7 +802,6 @@ export const Bajas: React.FC = () => {
                           key={asset.id}
                           onClick={() => handleSelectAsset(asset)}
                           style={{ padding: '0.75rem', cursor: 'pointer', borderBottom: '1px solid #eceff1', fontSize: '0.85rem' }}
-                          className="suggestion-item"
                         >
                           <strong style={{ color: '#1565c0' }}>[{asset.qrCode}]</strong> {asset.name}
                           <span style={{ display: 'block', fontSize: '0.75rem', color: '#78909c' }}>
@@ -531,7 +829,7 @@ export const Bajas: React.FC = () => {
                     name="date"
                     value={formData.date}
                     onChange={handleChange}
-                    style={{ borderColor: formErrors.date ? '#d32f2f' : undefined }}
+                    style={{ width: '100%', padding: '0.5rem', borderRadius: '6px', border: formErrors.date ? '1px solid #d32f2f' : '1px solid #b0bec5' }}
                     required
                   />
                   {formErrors.date && (
@@ -545,7 +843,7 @@ export const Bajas: React.FC = () => {
                     name="jefeId" 
                     value={formData.jefeId} 
                     onChange={handleChange}
-                    style={{ borderColor: formErrors.jefeId ? '#d32f2f' : undefined }}
+                    style={{ width: '100%', padding: '0.5rem', borderRadius: '6px', border: formErrors.jefeId ? '1px solid #d32f2f' : '1px solid #b0bec5' }}
                     required
                   >
                     <option value="">Seleccione supervisor...</option>
@@ -569,7 +867,7 @@ export const Bajas: React.FC = () => {
                   placeholder="Ej: ACTA-BAJA-2026-FCT-012 o INF-TEC-103"
                   value={formData.evidence}
                   onChange={handleChange}
-                  style={{ borderColor: formErrors.evidence ? '#d32f2f' : undefined }}
+                  style={{ width: '100%', padding: '0.5rem', borderRadius: '6px', border: formErrors.evidence ? '1px solid #d32f2f' : '1px solid #b0bec5' }}
                   required
                 />
                 {formErrors.evidence && (
@@ -601,8 +899,10 @@ export const Bajas: React.FC = () => {
             )}
 
             <div className="modal-footer" style={{ borderTop: '1px solid #eceff1', paddingTop: '1rem', marginTop: '1.5rem', display: 'flex', justifyContent: 'flex-end', gap: '1rem' }}>
-              <button type="button" className="btn-secondary" onClick={handleCloseModal} disabled={isSubmitting}>Cancelar</button>
-              <button type="submit" className="btn-primary" disabled={isSubmitting} style={{ backgroundColor: '#d32f2f', color: '#fff' }}>
+              <button type="button" className="btn-secondary" onClick={handleCloseModal} disabled={isSubmitting} style={{ padding: '0.5rem 1rem', borderRadius: '4px', border: '1px solid #cfd8dc', backgroundColor: '#fff', cursor: 'pointer' }}>
+                Cancelar
+              </button>
+              <button type="submit" className="btn-primary" disabled={isSubmitting} style={{ backgroundColor: '#d32f2f', color: '#fff', padding: '0.5rem 1.25rem', borderRadius: '4px', border: 'none', cursor: 'pointer', fontWeight: 'bold' }}>
                 {isSubmitting ? 'Registrando...' : 'Registrar Baja'}
               </button>
             </div>
@@ -612,8 +912,8 @@ export const Bajas: React.FC = () => {
 
       {/* Printable Acta de Baja Modal Template */}
       {activeActa && (
-        <div className="modal-overlay" style={{ zIndex: 2000 }}>
-          <div className="modal-content" style={{ maxWidth: '750px', width: '90%', padding: '2.5rem', backgroundColor: '#fff', borderRadius: '8px' }}>
+        <div className="modal-overlay" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 2000 }}>
+          <div className="modal-content" style={{ maxWidth: '750px', width: '90%', maxHeight: '90vh', overflowY: 'auto', padding: '2.5rem', backgroundColor: '#fff', borderRadius: '8px' }}>
             
             {/* Action buttons (hidden on print) */}
             <div className="no-print" style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #eceff1', paddingBottom: '1rem', marginBottom: '1.5rem' }}>
@@ -622,8 +922,11 @@ export const Bajas: React.FC = () => {
                 <button type="button" className="btn-secondary" onClick={() => setActiveActa(null)} style={{ padding: '0.5rem 1rem', backgroundColor: '#c62828', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
                   Cerrar
                 </button>
-                <button type="button" className="btn-primary" onClick={triggerPrint} style={{ padding: '0.5rem 1.25rem', backgroundColor: '#2e7d32', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>
-                  🖨️ Imprimir Acta (PDF)
+                <button type="button" className="btn-secondary" onClick={triggerPrint} style={{ padding: '0.5rem 1rem', backgroundColor: '#f5f5f5', color: '#333', border: '1px solid #ccc', borderRadius: '4px', cursor: 'pointer' }}>
+                  🖨️ Imprimir
+                </button>
+                <button type="button" className="btn-primary" onClick={() => handleDownloadPdf(activeActa.id)} style={{ padding: '0.5rem 1.25rem', backgroundColor: '#1e88e5', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>
+                  ⬇️ Descargar PDF Oficial
                 </button>
               </div>
             </div>

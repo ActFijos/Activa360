@@ -10,7 +10,7 @@ import { NestFactory } from '@nestjs/core';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { writeFileSync } from 'fs';
 import { resolve } from 'path';
-import { AppModule } from '../src/app.module.js';
+import { AppModule } from '../dist/src/app.module.js';
 
 async function exportOpenApi() {
   const app = await NestFactory.create(AppModule, { logger: false });
@@ -33,7 +33,10 @@ async function exportOpenApi() {
   writeFileSync(outputPath, JSON.stringify(document, null, 2), { encoding: 'utf8' });
 
   console.log(`✅ openapi.json generado en: ${outputPath}`);
-  await app.close();
+  try {
+    await app.close();
+  } catch {}
+  process.exit(0);
 }
 
 exportOpenApi().catch((err) => {

@@ -13,5 +13,6 @@ export class Baja {
     public readonly evidence: string,
     public readonly initiatedAt: Date,
     public readonly status: BajaStatus = BajaStatus.INICIADA,
+    public readonly motivoRechazo?: string | null,
   ) {}
 }

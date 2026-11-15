@@ -2,9 +2,11 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import request from 'supertest';
 import { InitiateBajaController } from './initiate-baja.controller';
-import { InitiateBajaUseCase } from '../../../domain/ports/in/initiate-baja.use-case';
-import { PrismaService } from '../../out/db/prisma.service';
-import { Baja, BajaStatus } from '../../../domain/models/baja.model';
+import { InitiateBajaUseCase } from '../../../domain/ports/in/initiate-baja.use-case.js';
+import { ListBajasUseCase } from '../../../domain/ports/in/list-bajas.use-case.js';
+import { RejectBajaUseCase } from '../../../domain/ports/in/reject-baja.use-case.js';
+import { PrismaService } from '../../out/db/prisma.service.js';
+import { Baja, BajaStatus } from '../../../domain/models/baja.model.js';
 
 // Definición del JSON Schema para el contrato del endpoint POST /bajas (Sección 5 de la Guía)
 const bajaResponseJsonSchema = {
@@ -62,6 +64,8 @@ describe('Test de Contrato: POST /bajas (Capa 3)', () => {
       controllers: [InitiateBajaController],
       providers: [
         { provide: InitiateBajaUseCase, useValue: fakeInitiateBajaUseCase },
+        { provide: ListBajasUseCase, useValue: { execute: jest.fn() } },
+        { provide: RejectBajaUseCase, useValue: { execute: jest.fn() } },
         { provide: PrismaService, useValue: fakePrismaService },
       ],
     }).compile();

@@ -15,6 +15,7 @@ model Baja {
   evidence      String
   initiatedAt   DateTime @default(now())
   status        String   @default("Iniciada")
+  motivoRechazo String?
 }
 
 // Modelo de Activo Fijo (Módulo Inventario)

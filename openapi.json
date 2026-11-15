@@ -754,23 +754,122 @@
         },
         "responses": {
           "201": {
-            "description": ""
+            "description": "Trámite de baja iniciado exitosamente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BajaItemResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Datos del trámite inválidos"
+          },
+          "404": {
+            "description": "El activo no existe en el inventario"
+          },
+          "409": {
+            "description": "El activo no se encuentra en estado Dañado/Obsoleto o ya tiene baja iniciada"
           }
         },
+        "summary": "Iniciar un nuevo trámite de baja SABS para un activo dañado u obsoleto",
         "tags": [
-          "InitiateBaja"
+          "compliance"
         ]
       },
       "get": {
         "operationId": "InitiateBajaController_getBajas",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "estado",
+            "required": false,
+            "in": "query",
+            "description": "Filtrar por estado del trámite de baja",
+            "schema": {
+              "example": "INICIADA",
+              "type": "string",
+              "enum": [
+                "INICIADA",
+                "APROBADA",
+                "RECHAZADA"
+              ]
+            }
+          },
+          {
+            "name": "activo",
+            "required": false,
+            "in": "query",
+            "description": "Filtrar por ID, código QR o nombre del activo (búsqueda insensible a mayúsculas)",
+            "schema": {
+              "example": "ACT-UMSS-2026-0001",
+              "type": "string"
+            }
+          },
+          {
+            "name": "fechaDesde",
+            "required": false,
+            "in": "query",
+            "description": "Fecha inicial del rango de registro de la baja (ISO 8601)",
+            "schema": {
+              "example": "2026-01-01T00:00:00.000Z",
+              "type": "string"
+            }
+          },
+          {
+            "name": "fechaHasta",
+            "required": false,
+            "in": "query",
+            "description": "Fecha final del rango de registro de la baja (ISO 8601)",
+            "schema": {
+              "example": "2026-12-31T23:59:59.999Z",
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "Número de página para paginación (comenzando en 1)",
+            "schema": {
+              "minimum": 1,
+              "default": 1,
+              "example": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Cantidad máxima de registros por página",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "default": 10,
+              "example": 10,
+              "type": "number"
+            }
+          }
+        ],
         "responses": {
           "200": {
-            "description": ""
+            "description": "Listado paginado de bajas con metadatos total, page, limit y totalPages",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedBajasResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Parámetros de consulta o fechas inválidas"
           }
         },
+        "summary": "Listar trámites de bajas con filtros por estado, activo y rango de fechas, más paginación",
         "tags": [
-          "InitiateBaja"
+          "compliance"
         ]
       }
     },
@@ -782,6 +881,7 @@
             "name": "id",
             "required": true,
             "in": "path",
+            "description": "ID único del trámite de baja",
             "schema": {
               "type": "string"
             }
@@ -789,11 +889,15 @@
         ],
         "responses": {
           "200": {
-            "description": ""
+            "description": "Baja aprobada exitosamente y activo retirado"
+          },
+          "404": {
+            "description": "Trámite de baja no encontrado"
           }
         },
+        "summary": "Aprobar trámite de baja y retirar el activo de los inventarios",
         "tags": [
-          "InitiateBaja"
+          "compliance"
         ]
       }
     },
@@ -805,18 +909,43 @@
             "name": "id",
             "required": true,
             "in": "path",
+            "description": "ID único del trámite de baja a rechazar",
             "schema": {
               "type": "string"
             }
           }
         ],
-        "responses": {
-          "200": {
-            "description": ""
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RejectBajaDto"
+              }
+            }
           }
         },
+        "responses": {
+          "200": {
+            "description": "Baja rechazada exitosamente con motivo registrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BajaItemResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Motivo de rechazo inválido o la baja no se encuentra en estado INICIADA"
+          },
+          "404": {
+            "description": "Trámite de baja no encontrado"
+          }
+        },
+        "summary": "Rechazar trámite de baja registrando el motivo obligatorio de rechazo",
         "tags": [
-          "InitiateBaja"
+          "compliance"
         ]
       }
     },
@@ -873,7 +1002,20 @@
     "version": "8.2.0",
     "contact": {}
   },
-  "tags": [],
+  "tags": [
+    {
+      "name": "inventario",
+      "description": "Escaneo QR y registro de inventario por campaña"
+    },
+    {
+      "name": "activos",
+      "description": "Registro, asignación y transferencia de activos"
+    },
+    {
+      "name": "compliance",
+      "description": "Bajas SABS y flujos de cumplimiento normativo"
+    }
+  ],
   "servers": [],
   "components": {
     "securitySchemes": {
@@ -936,6 +1078,137 @@
       "InitiateBajaDto": {
         "type": "object",
         "properties": {}
+      },
+      "BajaItemResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "baja-uuid-1",
+            "description": "ID único del trámite de baja"
+          },
+          "assetId": {
+            "type": "string",
+            "example": "asset-uuid-1",
+            "description": "ID del activo vinculado"
+          },
+          "jefeId": {
+            "type": "string",
+            "example": "jefe-uuid-1",
+            "description": "ID del jefe o supervisor autorizador"
+          },
+          "justification": {
+            "type": "string",
+            "example": "Equipo obsoleto no actualizable",
+            "description": "Justificación contable de la baja"
+          },
+          "evidence": {
+            "type": "string",
+            "example": "ACTA-2026-001",
+            "description": "Referencia a la evidencia o acta física de soporte"
+          },
+          "initiatedAt": {
+            "format": "date-time",
+            "type": "string",
+            "example": "2026-05-10T12:00:00.000Z",
+            "description": "Fecha de inicio del trámite"
+          },
+          "status": {
+            "type": "string",
+            "example": "Iniciada",
+            "enum": [
+              "Iniciada",
+              "APROBADA",
+              "RECHAZADA"
+            ],
+            "description": "Estado actual del trámite"
+          },
+          "motivoRechazo": {
+            "type": "object",
+            "example": null,
+            "nullable": true,
+            "description": "Motivo de rechazo registrado si el estado es RECHAZADA"
+          }
+        },
+        "required": [
+          "id",
+          "assetId",
+          "jefeId",
+          "justification",
+          "evidence",
+          "initiatedAt",
+          "status",
+          "motivoRechazo"
+        ]
+      },
+      "BajasPaginationMetaDto": {
+        "type": "object",
+        "properties": {
+          "total": {
+            "type": "number",
+            "example": 45,
+            "description": "Total de registros que coinciden con los filtros aplicados"
+          },
+          "page": {
+            "type": "number",
+            "example": 1,
+            "description": "Página actual consultada"
+          },
+          "limit": {
+            "type": "number",
+            "example": 10,
+            "description": "Límite de registros por página"
+          },
+          "totalPages": {
+            "type": "number",
+            "example": 5,
+            "description": "Total de páginas calculadas"
+          }
+        },
+        "required": [
+          "total",
+          "page",
+          "limit",
+          "totalPages"
+        ]
+      },
+      "PaginatedBajasResponseDto": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "description": "Lista de trámites de baja en la página actual",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BajaItemResponseDto"
+            }
+          },
+          "meta": {
+            "description": "Metadatos de paginación",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/BajasPaginationMetaDto"
+              }
+            ]
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ]
+      },
+      "RejectBajaDto": {
+        "type": "object",
+        "properties": {
+          "motivoRechazo": {
+            "type": "string",
+            "description": "Motivo justificado del rechazo de la baja del activo",
+            "minLength": 5,
+            "example": "El activo aún cuenta con vida útil técnica y puede ser reparado por el área de soporte."
+          }
+        },
+        "required": [
+          "motivoRechazo"
+        ]
       }
     }
   }
