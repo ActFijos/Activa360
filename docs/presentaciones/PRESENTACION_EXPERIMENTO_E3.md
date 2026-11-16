@@ -226,3 +226,4 @@ En el ADR 0007 definimos **3 condiciones numéricas exactas** que obligarían a 
 
 ### P3: "¿Por qué decidieron NO extraer? ¿No es una mala práctica quedarse en el monolito?"
 > **Respuesta:** *"Al contrario. Quedarse en un monolito modular con fronteras limpias es la mejor práctica cuando los números demuestran que extraer solo aporta sobrecosto (+46% de latencia base, +31.6 ms en p95 y +9.16 s en despliegue) sin ninguna ganancia real en aislamiento, ya que el monolito mantuvo 0.0% de errores en la ruta transaccional. Además, dejamos las dos implementaciones listas y desacopladas en el código; si alcanzamos la condición de reversión (150 req/s), cambiar a microservicio es tan simple como modificar una variable de entorno."*
+

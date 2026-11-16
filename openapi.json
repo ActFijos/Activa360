@@ -15,6 +15,20 @@
         ]
       }
     },
+    "/salud": {
+      "get": {
+        "operationId": "AppController_salud",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "App"
+        ]
+      }
+    },
     "/activos/qr": {
       "post": {
         "operationId": "ScanQrController_scanQr",
@@ -738,6 +752,20 @@
         ]
       }
     },
+    "/stats": {
+      "get": {
+        "operationId": "EstadisticasController_stats",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Estadisticas"
+        ]
+      }
+    },
     "/bajas": {
       "post": {
         "operationId": "InitiateBajaController_initiateBaja",
@@ -869,11 +897,28 @@
   },
   "info": {
     "title": "Activa360 API",
-    "description": "API de gestión de activos fijos — Inventario QR, Transferencias y Bajas SABS",
-    "version": "8.2.0",
+    "description": "API de gestión de activos fijos — Inventario QR, Transferencias, Bajas SABS y Reportes Patrimoniales",
+    "version": "8.4.0",
     "contact": {}
   },
-  "tags": [],
+  "tags": [
+    {
+      "name": "inventario",
+      "description": "Escaneo QR y registro de inventario por campaña"
+    },
+    {
+      "name": "activos",
+      "description": "Registro, asignación y transferencia de activos"
+    },
+    {
+      "name": "compliance",
+      "description": "Bajas SABS y flujos de cumplimiento normativo"
+    },
+    {
+      "name": "reportes",
+      "description": "Estadísticas patrimoniales y reportes analíticos"
+    }
+  ],
   "servers": [],
   "components": {
     "securitySchemes": {

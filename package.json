@@ -18,7 +18,7 @@
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
-    "openapi:export": "ts-node -r tsconfig-paths/register scripts/export-openapi.ts",
+    "openapi:export": "nest build && node scripts/export-openapi.js",
     "test:security": "jest --config ./test/jest-e2e.json test/security/",
     "test:evals": "jest --config ./test/jest-e2e.json test/evals/"
   },

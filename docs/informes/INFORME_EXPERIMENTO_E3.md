@@ -155,3 +155,4 @@ Siguiendo el rigor del método científico, las hipótesis fueron formalizadas y
   1. Tráfico sostenido a reportes superior a **150 req/s** por más de 10 minutos.
   2. Degradación del p95 en la ruta crítica transaccional en **más de 50 ms**.
   3. Inventario superior a **100,000 activos**, requiriendo un motor columnar OLAP (ClickHouse / DuckDB).
+
