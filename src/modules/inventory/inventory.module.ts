@@ -40,7 +40,10 @@ import { ReportsStatsController } from './adapters/in/web/reports-stats.controll
 // Usuarios
 import { UsersController } from './adapters/in/web/users.controller.js';
 
+import { ReportsModule } from '../reports/reports.module';
+
 @Module({
+  imports: [ReportsModule],
   controllers: [
     ScanQrController,
     RegisterAssetController,

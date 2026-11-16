@@ -11,9 +11,9 @@ if (!connectionString) {
 
 const pool = new Pool({ 
   connectionString,
-  options: '-c search_path=app'
+  options: `-c search_path=${process.env.DB_SCHEMA || 'public'}`
 });
-const adapter = new PrismaPg(pool, { schema: 'app' });
+const adapter = new PrismaPg(pool, { schema: process.env.DB_SCHEMA || 'public' });
 
 const prisma = new PrismaClient({ adapter });
 

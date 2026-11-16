@@ -1,0 +1,12 @@
+node_modules
+.git
+.github
+docs
+bench
+coverage
+test
+.cursor
+.gemini
+*.md
+*.log
+

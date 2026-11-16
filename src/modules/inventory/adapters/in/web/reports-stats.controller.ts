@@ -1,9 +1,13 @@
-import { Controller, Get, Query } from '@nestjs/common';
+import { Controller, Get, Query, Inject, ServiceUnavailableException } from '@nestjs/common';
+import { REPORTS, ReportsNoDisponible, type ReportsPort } from '../../../../reports/reports.port';
 import { PrismaService } from '../../../../compliance/adapters/out/db/prisma.service.js';
 
 @Controller('activos/reportes')
 export class ReportsStatsController {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    @Inject(REPORTS) private readonly reports: ReportsPort,
+  ) {}
 
   @Get('estadisticas')
   async getStats(
@@ -11,78 +15,15 @@ export class ReportsStatsController {
     @Query('endDate') endDate?: string,
     @Query('location') location?: string,
   ) {
-    const where: any = {};
-    if (location && location !== 'Todas') {
-      where.location = location;
+    const deadline = AbortSignal.timeout(5000);
+    try {
+      return await this.reports.getStats({ startDate, endDate, location }, deadline);
+    } catch (err: any) {
+      if (err instanceof ReportsNoDisponible) {
+        throw new ServiceUnavailableException(err.message);
+      }
+      throw err;
     }
-    if (startDate || endDate) {
-      where.purchaseDate = {};
-      if (startDate) where.purchaseDate.gte = new Date(startDate);
-      if (endDate) {
-        const end = new Date(endDate);
-        end.setUTCHours(23, 59, 59, 999);
-        where.purchaseDate.lte = end;
-      }
-    }
-
-    const assets = await this.prisma.asset.findMany({ where });
-
-    let totalValue = 0;
-    let monthlyDepreciation = 0;
-    let maintenanceCount = 0;
-
-    const categoryCounts: Record<string, number> = {
-      'Sistemas/TI': 0,
-      'Muebles y Enseres': 0,
-      Vehículos: 0,
-      Maquinaria: 0,
-      'Equipos de Oficina': 0,
-    };
-
-    const statusCounts: Record<string, number> = {};
-    const locationCounts: Record<string, number> = {};
-
-    assets.forEach((asset) => {
-      const val = asset.purchaseValue || 0;
-      totalValue += val;
-
-      const life = asset.usefulLife || 5;
-      monthlyDepreciation += val / (life * 12);
-
-      if (asset.status === 'Dañado') {
-        maintenanceCount++;
-      }
-
-      const cat = asset.category || 'Otros';
-      if (categoryCounts[cat] !== undefined) {
-        categoryCounts[cat]++;
-      } else {
-        categoryCounts[cat] = 1;
-      }
-
-      const st = asset.status || 'Nuevo';
-      statusCounts[st] = (statusCounts[st] || 0) + 1;
-
-      const loc = asset.location || 'Almacén Central';
-      locationCounts[loc] = (locationCounts[loc] || 0) + 1;
-    });
-
-    return {
-      totalAssets: assets.length,
-      totalValue: Math.round(totalValue),
-      monthlyDepreciation: Math.round(monthlyDepreciation),
-      maintenanceCount,
-      categoryDistribution: Object.entries(categoryCounts).map(
-        ([name, value]) => ({ name, value }),
-      ),
-      statusDistribution: Object.entries(statusCounts).map(([name, value]) => ({
-        name,
-        value,
-      })),
-      locationDistribution: Object.entries(locationCounts)
-        .map(([name, value]) => ({ name, value }))
-        .sort((a, b) => b.value - a.value),
-    };
   }
 
   @Get('depreciacion')

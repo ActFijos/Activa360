@@ -1,0 +1,41 @@
+import 'dotenv/config';
+import { NestFactory } from '@nestjs/core';
+import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import { writeFileSync } from 'fs';
+import { resolve } from 'path';
+import { AppModule } from '../dist/src/app.module.js';
+
+async function exportOpenApi() {
+  const app = await NestFactory.create(AppModule, { logger: false });
+
+  const config = new DocumentBuilder()
+    .setTitle('Activa360 API')
+    .setDescription(
+      'API de gestión de activos fijos — Inventario QR, Transferencias, Bajas SABS y Reportes Patrimoniales',
+    )
+    .setVersion('8.4.0')
+    .addTag('inventario', 'Escaneo QR y registro de inventario por campaña')
+    .addTag('activos', 'Registro, asignación y transferencia de activos')
+    .addTag('compliance', 'Bajas SABS y flujos de cumplimiento normativo')
+    .addTag('reportes', 'Estadísticas patrimoniales y reportes analíticos')
+    .addBearerAuth()
+    .build();
+
+  const document = SwaggerModule.createDocument(app, config);
+
+  const outputPath = resolve(process.cwd(), 'openapi.json');
+  writeFileSync(outputPath, JSON.stringify(document, null, 2), { encoding: 'utf8' });
+
+  console.log(`✅ openapi.json generado en: ${outputPath}`);
+  try {
+    await app.close();
+  } catch {
+    // ignorar doble cierre de pool
+  }
+  process.exit(0);
+}
+
+exportOpenApi().catch((err) => {
+  console.error('❌ Error al exportar OpenAPI:', err);
+  process.exit(1);
+});
