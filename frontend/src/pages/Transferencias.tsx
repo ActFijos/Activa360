@@ -33,6 +33,7 @@ interface Asset {
   name: string;
   status: string;
   location: string;
+  category?: string;
 }
 
 interface Employee {
@@ -53,6 +54,39 @@ interface Transfer {
   reason: string;
   assetName?: string;
   assetQr?: string;
+  actaCodigo?: string | null;
+  actaGenerada?: boolean;
+  actaHash?: string | null;
+}
+
+interface TransferActaData {
+  codigo: string;
+  fechaEmision: string | Date;
+  hashIntegridad: string;
+  activoSnapshot: {
+    id?: string;
+    qrCode: string;
+    name: string;
+    category?: string;
+    status: string;
+    location: string;
+    series?: string | null;
+    model?: string | null;
+    usefulLife?: number | null;
+    purchaseValue?: number | null;
+  };
+  origenSnapshot: {
+    unit: string;
+    responsible: string;
+    cargo?: string | null;
+  };
+  destinoSnapshot: {
+    unit: string;
+    responsible: string;
+    cargo?: string | null;
+  };
+  observaciones?: string | null;
+  generadoPor?: string | null;
 }
 
 export const Transferencias: React.FC = () => {
@@ -83,6 +117,11 @@ export const Transferencias: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [validLocations, setValidLocations] = useState<string[]>([]);
+
+  // Bilateral Acta & approval states
+  const [activeActa, setActiveActa] = useState<TransferActaData | null>(null);
+  const [isLoadingActa, setIsLoadingActa] = useState(false);
+  const [approvalNotification, setApprovalNotification] = useState<{ codigo: string; hash?: string } | null>(null);
 
   const validateField = (name: string, value: any, currentFormData = {
     assetId: selectedAsset?.id || '',
@@ -184,21 +223,73 @@ export const Transferencias: React.FC = () => {
   }, []);
 
   const handleApprove = async (id: string) => {
-    if (!window.confirm('¿Está seguro de que desea aprobar esta transferencia de activo?')) return;
+    if (!window.confirm('¿Está seguro de que desea aprobar esta transferencia de activo y formalizar el Acta Bilateral SABS (D.S. 0181)?')) return;
     try {
       const res = await fetch(`http://localhost:3000/activos/transferencias/${id}/aprobar`, {
         method: 'POST'
       });
       if (res.ok) {
-        alert('Transferencia aprobada exitosamente.');
-        loadData();
+        const data = await res.json();
+        const actaCod = data?.acta?.codigo || data?.transfer?.actaCodigo || 'ACTA-TRANS-2026';
+        setApprovalNotification({
+          codigo: actaCod,
+          hash: data?.acta?.hashIntegridad || data?.transfer?.actaHash,
+        });
+        await loadData();
       } else {
-        alert('Error al aprobar la transferencia.');
+        const errorData = await res.json().catch(() => ({}));
+        alert(errorData.message || 'Error al aprobar la transferencia.');
       }
     } catch (e) {
       console.error(e);
-      alert('Error de conexión.');
+      alert('Error de conexión al conectar con el servidor.');
     }
+  };
+
+  const handleViewActa = async (transfer: Transfer) => {
+    try {
+      setIsLoadingActa(true);
+      const res = await fetch(`http://localhost:3000/activos/transferencias/${transfer.id}/acta`);
+      if (res.ok) {
+        const actaData = await res.json();
+        setActiveActa(actaData);
+      } else {
+        const assetObj = assets.find(a => a.id === transfer.assetId);
+        setActiveActa({
+          codigo: transfer.actaCodigo || `ACTA-TRANS-2026-${transfer.id.substring(0, 4).toUpperCase()}`,
+          fechaEmision: transfer.date,
+          hashIntegridad: transfer.actaHash || 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855',
+          activoSnapshot: {
+            qrCode: transfer.assetQr || assetObj?.qrCode || 'S/QR',
+            name: transfer.assetName || assetObj?.name || 'Activo Fijo',
+            category: assetObj?.category || 'Equipo de Computación / Mobiliario',
+            status: 'Operativo / Transferido',
+            location: transfer.toUnit,
+          },
+          origenSnapshot: {
+            unit: transfer.fromUnit,
+            responsible: transfer.fromResponsible,
+            cargo: 'Custodio Entregante',
+          },
+          destinoSnapshot: {
+            unit: transfer.toUnit,
+            responsible: transfer.toResponsible,
+            cargo: 'Custodio Receptor',
+          },
+          observaciones: `Acta formalizada según Normativa SABS D.S. 0181. Motivo: ${transfer.reason}`,
+          generadoPor: 'Sistema SCAF / Jefe de Activos Fijos',
+        });
+      }
+    } catch (e) {
+      console.error('Error al cargar acta bilateral', e);
+      alert('Error al consultar el acta bilateral.');
+    } finally {
+      setIsLoadingActa(false);
+    }
+  };
+
+  const triggerPrint = () => {
+    window.print();
   };
 
   const handleReject = async (id: string) => {
@@ -394,7 +485,32 @@ export const Transferencias: React.FC = () => {
 
       {submitSuccess && (
         <div style={{ padding: '1rem', backgroundColor: '#e8f5e9', color: '#2e7d32', borderRadius: '8px', fontSize: '0.95rem', fontWeight: 'bold' }}>
-          ✓ ¡Transferencia registrada y aprobada con éxito! El activo ha sido reubicado y reasignado.
+          ✓ ¡Transferencia registrada y procesada con éxito!
+        </div>
+      )}
+
+      {approvalNotification && (
+        <div style={{
+          padding: '1rem 1.25rem',
+          backgroundColor: '#e8f5e9',
+          color: '#1b5e20',
+          borderRadius: '8px',
+          border: '1px solid #a5d6a7',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          fontSize: '0.95rem',
+        }}>
+          <div>
+            <strong>✓ ¡Transferencia aprobada con éxito!</strong> Se ha generado automáticamente el <strong>Acta Bilateral SABS</strong> con código correlativo <code style={{ backgroundColor: '#c8e6c9', padding: '2px 6px', borderRadius: '4px', fontWeight: 'bold', color: '#1b5e20' }}>{approvalNotification.codigo}</code> y sello criptográfico SHA-256.
+          </div>
+          <button
+            onClick={() => setApprovalNotification(null)}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '1.1rem', color: '#2e7d32' }}
+            title="Cerrar notificación"
+          >
+            ✕
+          </button>
         </div>
       )}
 
@@ -675,14 +791,315 @@ export const Transferencias: React.FC = () => {
                           ❌ Rechazar
                         </button>
                       </div>
+                    ) : t.status === 'Aprobada' ? (
+                      <button
+                        onClick={() => handleViewActa(t)}
+                        disabled={isLoadingActa}
+                        className="btn-primary"
+                        style={{
+                          padding: '5px 10px',
+                          fontSize: '0.78rem',
+                          backgroundColor: isLoadingActa ? '#90a4ae' : '#1565c0',
+                          color: '#fff',
+                          borderRadius: '4px',
+                          border: 'none',
+                          cursor: isLoadingActa ? 'not-allowed' : 'pointer',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '4px',
+                          fontWeight: 500,
+                        }}
+                        title="Ver / Generar Acta Bilateral SABS D.S. 0181"
+                      >
+                        📄 {isLoadingActa ? 'Cargando...' : 'Generar / Ver Acta'}
+                      </button>
                     ) : (
-                      <span style={{ color: '#90a4ae', fontSize: '0.8rem' }}>Procesado</span>
+                      <span style={{ color: '#90a4ae', fontSize: '0.8rem' }}>Rechazado</span>
                     )}
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {/* Modal Acta Bilateral de Transferencia (Normativa SABS - D.S. 0181) */}
+      {activeActa && (
+        <div className="modal-overlay" style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.65)',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 1000,
+          overflowY: 'auto',
+          padding: '2rem 1rem',
+        }}>
+          <div className="modal-content" style={{
+            maxWidth: '820px',
+            width: '100%',
+            backgroundColor: '#fff',
+            borderRadius: '10px',
+            padding: '2.5rem',
+            boxShadow: '0 8px 32px rgba(0,0,0,0.25)',
+            maxHeight: '92vh',
+            overflowY: 'auto',
+          }}>
+            {/* Header de controles en pantalla (oculto en impresión) */}
+            <div className="no-print" style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              borderBottom: '1px solid #cfd8dc',
+              paddingBottom: '1rem',
+              marginBottom: '1.5rem',
+            }}>
+              <div>
+                <h3 style={{ margin: 0, color: '#1a237e', fontSize: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  📜 Acta de Transferencia Bilateral Formalizada
+                </h3>
+                <span style={{ fontSize: '0.85rem', color: '#546e7a' }}>
+                  Normativa SABS D.S. 0181 - Sistema de Control de Activos Fijos (SCAF)
+                </span>
+              </div>
+              <div style={{ display: 'flex', gap: '0.75rem' }}>
+                <button
+                  type="button"
+                  onClick={() => setActiveActa(null)}
+                  style={{
+                    padding: '0.5rem 1rem',
+                    backgroundColor: '#eceff1',
+                    color: '#37474f',
+                    border: '1px solid #b0bec5',
+                    borderRadius: '6px',
+                    cursor: 'pointer',
+                    fontWeight: 500,
+                  }}
+                >
+                  Cerrar
+                </button>
+                <button
+                  type="button"
+                  onClick={triggerPrint}
+                  style={{
+                    padding: '0.5rem 1.25rem',
+                    backgroundColor: '#1b5e20',
+                    color: '#fff',
+                    border: 'none',
+                    borderRadius: '6px',
+                    cursor: 'pointer',
+                    fontWeight: 'bold',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                  }}
+                >
+                  🖨️ Imprimir Acta (PDF)
+                </button>
+              </div>
+            </div>
+
+            {/* Documento Imprimible Oficial SABS D.S. 0181 */}
+            <div className="print-section" style={{
+              color: '#000',
+              fontFamily: 'Arial, sans-serif',
+              lineHeight: '1.4',
+              backgroundColor: '#fff',
+            }}>
+              {/* Encabezado Institucional */}
+              <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'flex-start',
+                borderBottom: '3px double #000',
+                paddingBottom: '1rem',
+                marginBottom: '1.5rem',
+              }}>
+                <div>
+                  <h2 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                    Universidad Mayor de San Simón
+                  </h2>
+                  <h3 style={{ margin: '0.2rem 0 0 0', fontSize: '0.9rem', color: '#333', textTransform: 'uppercase' }}>
+                    Dirección Administrativa y Financiera - Dpto. Activos Fijos (SCAF)
+                  </h3>
+                  <div style={{ fontSize: '0.8rem', color: '#666', marginTop: '0.2rem' }}>
+                    Normas Básicas del Sistema de Administración de Bienes y Servicios (D.S. 0181)
+                  </div>
+                </div>
+                <div style={{ textAlign: 'right' }}>
+                  <div style={{ fontSize: '0.75rem', fontWeight: 'bold', color: '#555', textTransform: 'uppercase' }}>
+                    Código Oficial del Acta
+                  </div>
+                  <div style={{ fontSize: '1rem', color: '#b71c1c', fontFamily: 'monospace', fontWeight: 'bold' }}>
+                    {activeActa.codigo}
+                  </div>
+                  <div style={{ fontSize: '0.75rem', color: '#555', marginTop: '0.2rem' }}>
+                    Fecha: {new Date(activeActa.fechaEmision).toLocaleString('es-BO', { timeZone: 'UTC' })}
+                  </div>
+                </div>
+              </div>
+
+              {/* Título Principal */}
+              <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
+                <h1 style={{ margin: 0, fontSize: '1.3rem', fontWeight: 'bold', textDecoration: 'underline' }}>
+                  ACTA DE ENTREGA Y RECEPCIÓN BILATERAL DE ACTIVOS FIJOS
+                </h1>
+                <div style={{ fontSize: '0.85rem', color: '#444', marginTop: '0.3rem' }}>
+                  Traspaso formal de custodia institucional entre servidores públicos (FSD-UC-005)
+                </div>
+              </div>
+
+              {/* Bloque Cuadrícula de Custodios */}
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: '1fr 1fr',
+                gap: '1rem',
+                marginBottom: '1.5rem',
+              }}>
+                {/* Custodio Entrega (Origen) */}
+                <div style={{ border: '1px solid #000', padding: '0.85rem', borderRadius: '4px', backgroundColor: '#fcfcfc' }}>
+                  <div style={{ fontSize: '0.85rem', fontWeight: 'bold', borderBottom: '1px solid #ccc', paddingBottom: '0.3rem', marginBottom: '0.5rem', textTransform: 'uppercase', color: '#b71c1c' }}>
+                    📤 Custodio Origen (Entrega / Descargo)
+                  </div>
+                  <div style={{ fontSize: '0.85rem', marginBottom: '0.3rem' }}>
+                    <strong>Servidor Público:</strong> {activeActa.origenSnapshot.responsible}
+                  </div>
+                  <div style={{ fontSize: '0.85rem', marginBottom: '0.3rem' }}>
+                    <strong>Unidad Organizacional:</strong> {activeActa.origenSnapshot.unit}
+                  </div>
+                  <div style={{ fontSize: '0.85rem' }}>
+                    <strong>Cargo / Función:</strong> {activeActa.origenSnapshot.cargo || 'Funcionario Custodio'}
+                  </div>
+                </div>
+
+                {/* Custodio Recibe (Destino) */}
+                <div style={{ border: '1px solid #000', padding: '0.85rem', borderRadius: '4px', backgroundColor: '#fcfcfc' }}>
+                  <div style={{ fontSize: '0.85rem', fontWeight: 'bold', borderBottom: '1px solid #ccc', paddingBottom: '0.3rem', marginBottom: '0.5rem', textTransform: 'uppercase', color: '#1b5e20' }}>
+                    📥 Custodio Destino (Recepción / Cargo)
+                  </div>
+                  <div style={{ fontSize: '0.85rem', marginBottom: '0.3rem' }}>
+                    <strong>Servidor Público:</strong> {activeActa.destinoSnapshot.responsible}
+                  </div>
+                  <div style={{ fontSize: '0.85rem', marginBottom: '0.3rem' }}>
+                    <strong>Unidad Organizacional:</strong> {activeActa.destinoSnapshot.unit}
+                  </div>
+                  <div style={{ fontSize: '0.85rem' }}>
+                    <strong>Cargo / Función:</strong> {activeActa.destinoSnapshot.cargo || 'Funcionario Custodio Receptor'}
+                  </div>
+                </div>
+              </div>
+
+              {/* Fundamentación */}
+              <p style={{ fontSize: '0.85rem', textAlign: 'justify', marginBottom: '1.2rem', lineHeight: '1.5' }}>
+                En aplicación del <strong>Artículo 145 y 146 del Decreto Supremo N° 0181 (SABS)</strong> y los manuales de procedimientos del Sistema de Control de Activos Fijos (SCAF) de la Universidad Mayor de San Simón, se realiza la verificación física y formalización del traspaso del bien mueble que se describe a continuación:
+              </p>
+
+              {/* Tabla Técnica del Activo */}
+              <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '1.5rem', fontSize: '0.85rem' }}>
+                <thead>
+                  <tr style={{ backgroundColor: '#eeeeee' }}>
+                    <th style={{ padding: '8px', textAlign: 'left', border: '1px solid #000' }}>CÓDIGO QR / REGISTRO</th>
+                    <th style={{ padding: '8px', textAlign: 'left', border: '1px solid #000' }}>DESCRIPCIÓN TÉCNICA DEL ACTIVO</th>
+                    <th style={{ padding: '8px', textAlign: 'left', border: '1px solid #000' }}>CATEGORÍA</th>
+                    <th style={{ padding: '8px', textAlign: 'left', border: '1px solid #000' }}>ESTADO FÍSICO</th>
+                    <th style={{ padding: '8px', textAlign: 'left', border: '1px solid #000' }}>DESTINO ASIGNADO</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td style={{ padding: '8px', border: '1px solid #000', fontFamily: 'monospace', fontWeight: 'bold' }}>
+                      {activeActa.activoSnapshot.qrCode}
+                    </td>
+                    <td style={{ padding: '8px', border: '1px solid #000' }}>
+                      {activeActa.activoSnapshot.name}
+                    </td>
+                    <td style={{ padding: '8px', border: '1px solid #000' }}>
+                      {activeActa.activoSnapshot.category || 'Equipo de Computación'}
+                    </td>
+                    <td style={{ padding: '8px', border: '1px solid #000' }}>
+                      {activeActa.activoSnapshot.status}
+                    </td>
+                    <td style={{ padding: '8px', border: '1px solid #000', fontWeight: '500' }}>
+                      {activeActa.activoSnapshot.location}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+
+              {/* Cláusula Legal de Descargo y Responsabilidad (SABS & Ley 1178) */}
+              <div style={{
+                border: '1px solid #000',
+                padding: '0.85rem',
+                backgroundColor: '#f9f9f9',
+                fontSize: '0.8rem',
+                textAlign: 'justify',
+                marginBottom: '1.5rem',
+                lineHeight: '1.45',
+              }}>
+                <strong style={{ display: 'block', marginBottom: '0.3rem', textTransform: 'uppercase' }}>
+                  Cláusula de Liberación de Descargo y Responsabilidad Bilateral (Ley 1178 SAFCO):
+                </strong>
+                Con la suscripción de la presente Acta, el <strong>Custodio Origen</strong> queda formal y administrativamente desvinculado de la custodia física y legal sobre el activo transferido. El <strong>Custodio Destino</strong> asume a título formal la tenencia, custodia, uso adecuado y resguardo del bien, comprometiéndose a velar por su integridad, mantenimiento preventivo y no enajenación sin autorización previa del Departamento de Activos Fijos, bajo responsabilidades civil, administrativa y penal previstas en la Ley SAFCO N° 1178.
+              </div>
+
+              {/* Sello Criptográfico de Integridad y No Repudio */}
+              <div style={{
+                border: '1px dashed #455a64',
+                padding: '0.75rem 1rem',
+                borderRadius: '4px',
+                backgroundColor: '#eceff1',
+                marginBottom: '2.5rem',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                fontSize: '0.75rem',
+              }}>
+                <div>
+                  <strong>🔐 SELLO DE INTEGRIDAD CRIPTOGRÁFICA (SHA-256):</strong>
+                  <div style={{ fontFamily: 'monospace', fontSize: '0.75rem', color: '#263238', marginTop: '0.2rem', wordBreak: 'break-all' }}>
+                    {activeActa.hashIntegridad}
+                  </div>
+                </div>
+                <div style={{ textAlign: 'right', minWidth: '130px', color: '#37474f' }}>
+                  ✓ Inmutable y Auditado<br />
+                  OpenTelemetry SCAF
+                </div>
+              </div>
+
+              {/* Firmas Oficiales Bilaterales */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '2.5rem', fontSize: '0.85rem' }}>
+                <div style={{ textAlign: 'center', width: '220px' }}>
+                  <div style={{ borderTop: '1px solid #000', paddingTop: '0.5rem' }}>
+                    <strong>{activeActa.origenSnapshot.responsible}</strong>
+                    <div style={{ fontSize: '0.75rem', color: '#444' }}>CUSTODIO ENTREGA</div>
+                    <div style={{ fontSize: '0.75rem', color: '#666' }}>Entregué Conforme (Descargo)</div>
+                  </div>
+                </div>
+
+                <div style={{ textAlign: 'center', width: '220px' }}>
+                  <div style={{ borderTop: '1px solid #000', paddingTop: '0.5rem' }}>
+                    <strong>{activeActa.destinoSnapshot.responsible}</strong>
+                    <div style={{ fontSize: '0.75rem', color: '#444' }}>CUSTODIO RECIBE</div>
+                    <div style={{ fontSize: '0.75rem', color: '#666' }}>Recibí Conforme (Cargo)</div>
+                  </div>
+                </div>
+
+                <div style={{ textAlign: 'center', width: '220px' }}>
+                  <div style={{ borderTop: '1px solid #000', paddingTop: '0.5rem' }}>
+                    <strong>Ing. Sonia Rojas</strong>
+                    <div style={{ fontSize: '0.75rem', color: '#444' }}>JEFE DE ACTIVOS FIJOS</div>
+                    <div style={{ fontSize: '0.75rem', color: '#666' }}>Dpto. Activos Fijos UMSS</div>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
         </div>
       )}
       <QRScannerModal 

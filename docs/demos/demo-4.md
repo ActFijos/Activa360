@@ -89,16 +89,29 @@
   - Valida la disponibilidad del activo y vincula la responsabilidad legal a la cédula del funcionario receptor.
   - Persiste el acta en `AssignmentRecord` con fecha, ubicación de destino y observaciones técnicas.
 
-#### B) Transferencias Concurrentes con Bloqueo Pesimista — FSD-UC-005
-- **Endpoints (OpenAPI):** `POST /activos/transferir`, `POST /activos/transferencias/{id}/aprobar`.
+#### B) Transferencias Concurrentes con Bloqueo Pesimista y Generación Automática del Acta Bilateral SABS — FSD-UC-005
+- **Endpoints (OpenAPI):** `POST /activos/transferir`, `POST /activos/transferencias/{id}/aprobar`, `GET /activos/transferencias/{id}/acta`, `GET /activos/transferencias`.
 - **Criterios de Aceptación (Gherkin):**
   ```gherkin
-  Dado un activo asignado al Custodio A
-  Cuando Custodio A inicia traspaso a Custodio B
-  Entonces Custodio B debe aprobar la recepción
-    Y el sistema libera de responsabilidad a Custodio A
+  Dado un activo fijo en estado "En_Transferencia" con solicitud formal entre custodios
+  Cuando el Custodio Receptor aprueba la recepción formal mediante "POST /activos/transferencias/{id}/aprobar"
+  Entonces el sistema ejecuta una transacción Prisma aplicando bloqueo pesimista "SELECT FOR UPDATE" sobre la fila del activo
+    Y genera automáticamente el Acta de Transferencia Bilateral SABS (D.S. 0181) con correlativo único "ACTA-TRANS-2026-XXXX"
+    Y calcula el sello digital criptográfico de integridad y no repudio SHA-256
+    Y emite un span explícito de OpenTelemetry "TransferAssetService.generateBilateralActa" exportado a Grafana Tempo
+    Y desliga de responsabilidad legal al Custodio Origen y reasigna formalmente el activo al Custodio Receptor
+    Y habilita en la interfaz frontend el botón "Generar / Ver Acta" con descarga e impresión formal
   ```
-- **Control Transaccional:** `TransferAssetService` ejecuta `prisma.$transaction()` aplicando un bloqueo pesimista `SELECT FOR UPDATE` sobre la fila del activo en PostgreSQL, neutralizando cualquier condición de carrera ante traspasos concurrentes.
+- **Control Transaccional y Bloqueo Pesimista:** `TransferAssetService` ejecuta `prisma.$transaction()` aplicando un bloqueo pesimista `SELECT ... FOR UPDATE` sobre la fila del activo en PostgreSQL, neutralizando cualquier condición de carrera ante traspasos concurrentes.
+- **Generación Automática del Acta Bilateral SABS:** 
+  - Generación de correlativo oficial secuencial `ACTA-TRANS-2026-XXXX`.
+  - Captura inmutable de snapshots del activo y de los custodios (entrega y recepción).
+  - Cálculo de hash `SHA-256` para garantizar la integridad documental y no repudio (D.S. 0181 y Ley 1178).
+- **Observabilidad con OpenTelemetry & Grafana Tempo:** Span explícito `TransferAssetService.generateBilateralActa` con atributos semánticos: `transfer.id`, `asset.qr`, `acta.codigo`, `acta.sha256`.
+- **Interfaz Frontend SCAF:**
+  - Notificación de aprobación destacando el correlativo del acta generada.
+  - Botón interactivo `📄 Generar / Ver Acta` en el historial de transferencias.
+  - Modal oficial con membrete UMSS / SCAF, detalle técnico del activo, cláusula de descargo legal, sello criptográfico SHA-256, triple firma reglamentaria y soporte de impresión PDF (`window.print()`).
 
 ---
 

@@ -58,16 +58,37 @@ model Movement {
 
 // Modelo de Transferencias de Activos
 model Transfer {
-  id              String   @id @default(uuid())
+  id              String        @id @default(uuid())
   assetId         String
-  asset           Asset    @relation(fields: [assetId], references: [id])
+  asset           Asset         @relation(fields: [assetId], references: [id])
   fromUnit        String
   fromResponsible String
   toUnit          String
   toResponsible   String
-  date            DateTime @default(now())
-  status          String   // Aprobada, Pendiente, Rechazada
+  date            DateTime      @default(now())
+  status          String        // Aprobada, Pendiente, Rechazada
   reason          String
+  actaCodigo      String?       @unique
+  actaGenerada    Boolean       @default(false)
+  actaHash        String?
+  acta            TransferActa?
+}
+
+// Modelo de Acta Bilateral de Transferencia SABS (D.S. 0181)
+model TransferActa {
+  id              String   @id @default(uuid())
+  transferId      String   @unique
+  transfer        Transfer @relation(fields: [transferId], references: [id], onDelete: Cascade)
+  codigo          String   @unique
+  fechaEmision    DateTime @default(now())
+  hashIntegridad  String
+  activoSnapshot  Json
+  origenSnapshot  Json
+  destinoSnapshot Json
+  observaciones   String?
+  generadoPor     String?
+
+  @@map("transfer_actas")
 }
 
 // Modelo de Asignaciones de Activos a responsables

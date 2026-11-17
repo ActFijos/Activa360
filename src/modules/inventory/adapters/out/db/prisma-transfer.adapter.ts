@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
-import { TransferRepositoryPort } from '../../../domain/ports/out/transfer-repository.port.js';
-import { Transfer } from '../../../domain/models/transfer.model.js';
-import { PrismaService } from '../../../../compliance/adapters/out/db/prisma.service.js';
+import { TransferRepositoryPort } from '../../../domain/ports/out/transfer-repository.port';
+import { Transfer } from '../../../domain/models/transfer.model';
+import { PrismaService } from '../../../../compliance/adapters/out/db/prisma.service';
 
 @Injectable()
 export class PrismaTransferAdapter implements TransferRepositoryPort {
@@ -18,6 +18,9 @@ export class PrismaTransferAdapter implements TransferRepositoryPort {
       record.date,
       record.status,
       record.reason,
+      record.actaCodigo,
+      record.actaGenerada ?? false,
+      record.actaHash,
     );
   }
 
@@ -32,6 +35,9 @@ export class PrismaTransferAdapter implements TransferRepositoryPort {
       date: transfer.date,
       status: transfer.status,
       reason: transfer.reason,
+      actaCodigo: transfer.actaCodigo,
+      actaGenerada: transfer.actaGenerada,
+      actaHash: transfer.actaHash,
     };
 
     const record = await this.prisma.transfer.upsert({

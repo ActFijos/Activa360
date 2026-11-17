@@ -9,6 +9,7 @@ import { InMemoryAssetRepository } from './adapters/out/persistence/in-memory-as
 import { InMemoryMovementRepository } from './adapters/out/persistence/in-memory-movement.repository';
 import { Asset, AssetStatus } from './domain/models/asset.model';
 import { Transfer } from './domain/models/transfer.model';
+import { PrismaService } from '../compliance/adapters/out/db/prisma.service';
 
 describe('Flujo de Integración 1: Ciclo Completo de Inventario y Movilidad', () => {
   let scanQrService: ScanQrService;
@@ -17,9 +18,10 @@ describe('Flujo de Integración 1: Ciclo Completo de Inventario y Movilidad', ()
   let movementRepo: InMemoryMovementRepository;
   let fakeTransferRepo: jest.Mocked<TransferRepositoryPort>;
   let fakeAssignmentRepo: jest.Mocked<AssignmentRepositoryPort>;
+  let fakePrisma: any;
 
   beforeEach(async () => {
-    const savedTransfers: Transfer[] = [];
+    const savedTransfers: any[] = [];
 
     fakeTransferRepo = {
       save: jest.fn().mockImplementation((t: Transfer) => {
@@ -29,13 +31,36 @@ describe('Flujo de Integración 1: Ciclo Completo de Inventario y Movilidad', ()
       findById: jest.fn().mockImplementation((id: string) =>
         Promise.resolve(savedTransfers.find((t) => t.id === id) || null),
       ),
-      findAll: jest.fn().mockResolvedValue(savedTransfers),
+      findAll: jest.fn().mockImplementation(async () => savedTransfers),
     };
 
     fakeAssignmentRepo = {
       save: jest.fn(),
       findById: jest.fn(),
       findAll: jest.fn().mockResolvedValue([]),
+    };
+
+    fakePrisma = {
+      $transaction: jest.fn().mockImplementation(async (cb) => cb(fakePrisma)),
+      $queryRaw: jest.fn().mockImplementation(async () => {
+        const a = await assetRepo.findById('asset-flow-1');
+        return a
+          ? [{ id: a.id, name: a.name, status: a.status, location: a.location }]
+          : [];
+      }),
+      assignment: {
+        findFirst: jest.fn().mockResolvedValue(null),
+      },
+      transfer: {
+        create: jest.fn().mockImplementation(async (args) => {
+          const t = { ...args.data };
+          savedTransfers.push(t);
+          return t;
+        }),
+      },
+      asset: {
+        update: jest.fn().mockResolvedValue({}),
+      },
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -46,6 +71,7 @@ describe('Flujo de Integración 1: Ciclo Completo de Inventario y Movilidad', ()
         { provide: MovementRepositoryPort, useClass: InMemoryMovementRepository },
         { provide: TransferRepositoryPort, useValue: fakeTransferRepo },
         { provide: AssignmentRepositoryPort, useValue: fakeAssignmentRepo },
+        { provide: PrismaService, useValue: fakePrisma },
       ],
     }).compile();
 

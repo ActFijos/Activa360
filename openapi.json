@@ -223,7 +223,7 @@
     },
     "/activos/transferir": {
       "post": {
-        "description": "Inicia una transferencia de activo con bloqueo pesimista (SELECT FOR UPDATE) dentro de una transacción Prisma. Garantiza que dos solicitudes concurrentes para el mismo activo no generen transferencias duplicadas. Caso de uso FSD: UC-TRANS-001.",
+        "description": "Inicia una transferencia de activo con bloqueo pesimista (SELECT FOR UPDATE) dentro de una transacción Prisma. Garantiza que dos solicitudes concurrentes para el mismo activo no generen transferencias duplicadas. Caso de uso FSD: UC-TRANS-001 / FSD-UC-005.",
         "operationId": "TransferAssetController_transferAsset",
         "parameters": [],
         "requestBody": {
@@ -267,11 +267,12 @@
     },
     "/activos/transferencias": {
       "get": {
+        "description": "Retorna el historial completo de transferencias incluyendo estado, código de acta bilateral y sello de integridad criptográfico.",
         "operationId": "TransferAssetController_getTransfers",
         "parameters": [],
         "responses": {
           "200": {
-            "description": "Lista de transferencias."
+            "description": "Lista de transferencias registradas."
           }
         },
         "summary": "Listar todas las transferencias registradas",
@@ -282,13 +283,14 @@
     },
     "/activos/transferencias/{id}/aprobar": {
       "post": {
+        "description": "Ejecuta la transacción con bloqueo pesimista SELECT FOR UPDATE sobre el activo, libera de responsabilidad al custodio origen, reasigna el activo al custodio destino, genera correlativo oficial de Acta Bilateral SABS, calcula hash criptográfico SHA-256 y registra el span en OpenTelemetry (Grafana Tempo). FSD-UC-005.",
         "operationId": "TransferAssetController_approveTransfer",
         "parameters": [
           {
             "name": "id",
             "required": true,
             "in": "path",
-            "description": "ID de la transferencia a aprobar",
+            "description": "ID único de la transferencia a aprobar",
             "schema": {
               "type": "string"
             }
@@ -296,13 +298,67 @@
         ],
         "responses": {
           "200": {
-            "description": "Transferencia aprobada exitosamente."
+            "description": "Transferencia aprobada exitosamente y Acta Bilateral generada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "success": true,
+                    "message": "Transferencia aprobada exitosamente y Acta Bilateral generada.",
+                    "transfer": {
+                      "id": "uuid",
+                      "status": "Aprobada",
+                      "actaCodigo": "ACTA-TRANS-2026-0001",
+                      "actaGenerada": true,
+                      "actaHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+                    },
+                    "acta": {
+                      "codigo": "ACTA-TRANS-2026-0001",
+                      "fechaEmision": "2026-11-17T00:00:00.000Z",
+                      "hashIntegridad": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+                    }
+                  }
+                }
+              }
+            }
           },
           "404": {
             "description": "Transferencia o activo no encontrado."
+          },
+          "409": {
+            "description": "La transferencia ya fue aprobada previamente."
           }
         },
-        "summary": "Aprobar una transferencia pendiente y actualizar estado del activo",
+        "summary": "Aprobar transferencia y generar Acta Bilateral SABS",
+        "tags": [
+          "activos"
+        ]
+      }
+    },
+    "/activos/transferencias/{id}/acta": {
+      "get": {
+        "description": "Retorna el documento estructurado oficial del Acta de Transferencia Bilateral, incluyendo snapshots de custodios (origen y destino), datos técnicos del activo, sello digital SHA-256 de integridad y datos normativos para su descarga o impresión.",
+        "operationId": "TransferAssetController_getTransferActa",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "ID de la transferencia para obtener su acta bilateral",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Detalle estructurado del Acta Bilateral SABS."
+          },
+          "404": {
+            "description": "Acta bilateral no encontrada o la transferencia no ha sido aprobada aún."
+          }
+        },
+        "summary": "Consultar Acta Bilateral de Transferencia SABS (D.S. 0181)",
         "tags": [
           "activos"
         ]

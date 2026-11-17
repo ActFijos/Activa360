@@ -21,11 +21,11 @@ import { AssignmentRepositoryPort } from './domain/ports/out/assignment-reposito
 import { PrismaAssignmentAdapter } from './adapters/out/db/prisma-assignment.adapter.js';
 
 // Transferencias
-import { TransferAssetController } from './adapters/in/web/transfer-asset.controller.js';
-import { TransferAssetUseCase } from './domain/ports/in/transfer-asset.use-case.js';
-import { TransferAssetService } from './domain/services/transfer-asset.service.js';
-import { TransferRepositoryPort } from './domain/ports/out/transfer-repository.port.js';
-import { PrismaTransferAdapter } from './adapters/out/db/prisma-transfer.adapter.js';
+import { TransferAssetController } from './adapters/in/web/transfer-asset.controller';
+import { TransferAssetUseCase } from './domain/ports/in/transfer-asset.use-case';
+import { TransferAssetService } from './domain/services/transfer-asset.service';
+import { TransferRepositoryPort } from './domain/ports/out/transfer-repository.port';
+import { PrismaTransferAdapter } from './adapters/out/db/prisma-transfer.adapter';
 
 // Inventario QR (Feature 1 + Feature 2)
 import { InventoryScanController } from './adapters/in/web/inventory-scan.controller.js';
