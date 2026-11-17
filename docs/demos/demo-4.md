@@ -14,7 +14,7 @@
 | :---- | :---- | :---- | :---- |
 | **Guillermo Omar Daza Alcalá** | 1. Sincronización offline en lote con algoritmo Last Write Wins (`POST /activos/sync`)<br>2. Registro e inventario QR en campo con control de concurrencia (`POST /inventory/scan`, `GET /activos/qr/{qrCode}`) | • FSD-UC-002: Sincronización de datos offline<br>• FSD-UC-001: Registro y escaneo de activo QR | [https://github.com/ActFijos/Activa360](https://github.com/ActFijos/Activa360) |
 | **Josefina Rojas** | 1. Workflow de Baja Patrimonial SABS con evidencia documental y transición de estados (`POST /bajas`, `GET /bajas`, `POST /bajas/{id}/aprobar`)<br>2. Rechazo normativo de baja y restauración condicional de diagnóstico técnico (`POST /bajas/{id}/rechazar`) | • FSD-UC-003: Workflow de Baja (SABS - D.S. 0181) | [https://github.com/ActFijos/Activa360](https://github.com/ActFijos/Activa360) |
-| **Rita Nina** | 1. Asignación de Activos a Custodio con vinculación patrimonial y actas (`POST /activos/asignar`, `GET /activos/asignaciones`, `GET /activos/empleados`)<br>2. Transferencia bilateral entre custodios con bloqueo pesimista `SELECT FOR UPDATE` (`POST /activos/transferir`, `POST /activos/transferencias/{id}/aprobar`) | • FSD-UC-004: Asignación a Custodio<br>• FSD-UC-005: Traspaso de Activo | [https://github.com/ActFijos/Activa360](https://github.com/ActFijos/Activa360) |
+| **Rita Nina** | 1. Asignación de Activos a Custodio con vinculación patrimonial y actas (`POST /activos/asignar`, `GET /activos/asignaciones`, `GET /activos/empleados`)<br>2. Transferencia bilateral entre custodios con bloqueo pesimista `SELECT FOR UPDATE` (`POST /activos/transferir`, `POST /activos/transferencias/{id}/aprobar`)<br>3. Generación Automática del Acta Bilateral SABS con hash de integridad SHA-256 y descarga documental (`GET /activos/transferencias/{id}/acta`) | • FSD-UC-004: Asignación a Custodio<br>• FSD-UC-005: Traspaso de Activo (Acta Bilateral SABS) | [https://github.com/ActFijos/Activa360](https://github.com/ActFijos/Activa360) |
 
 ---
 
@@ -89,35 +89,39 @@
   - Valida la disponibilidad del activo y vincula la responsabilidad legal a la cédula del funcionario receptor.
   - Persiste el acta en `AssignmentRecord` con fecha, ubicación de destino y observaciones técnicas.
 
-#### B) Transferencias Concurrentes con Bloqueo Pesimista y Generación Automática del Acta Bilateral SABS — FSD-UC-005
-- **Endpoints (OpenAPI):** `POST /activos/transferir`, `POST /activos/transferencias/{id}/aprobar`, `GET /activos/transferencias/{id}/acta`, `GET /activos/transferencias`.
+#### B) Transferencias Concurrentes con Bloqueo Pesimista — FSD-UC-005
+- **Endpoints (OpenAPI):** `POST /activos/transferir`, `POST /activos/transferencias/{id}/aprobar`.
 - **Criterios de Aceptación (Gherkin):**
   ```gherkin
-  Dado un activo fijo en estado "En_Transferencia" con solicitud formal entre custodios
-  Cuando el Custodio Receptor aprueba la recepción formal mediante "POST /activos/transferencias/{id}/aprobar"
-  Entonces el sistema ejecuta una transacción Prisma aplicando bloqueo pesimista "SELECT FOR UPDATE" sobre la fila del activo
-    Y genera automáticamente el Acta de Transferencia Bilateral SABS (D.S. 0181) con correlativo único "ACTA-TRANS-2026-XXXX"
-    Y calcula el sello digital criptográfico de integridad y no repudio SHA-256
-    Y emite un span explícito de OpenTelemetry "TransferAssetService.generateBilateralActa" exportado a Grafana Tempo
-    Y desliga de responsabilidad legal al Custodio Origen y reasigna formalmente el activo al Custodio Receptor
-    Y habilita en la interfaz frontend el botón "Generar / Ver Acta" con descarga e impresión formal
+  Dado un activo asignado al Custodio A
+  Cuando Custodio A inicia traspaso a Custodio B
+  Entonces Custodio B debe aprobar la recepción
+    Y el sistema libera de responsabilidad a Custodio A
   ```
-- **Control Transaccional y Bloqueo Pesimista:** `TransferAssetService` ejecuta `prisma.$transaction()` aplicando un bloqueo pesimista `SELECT ... FOR UPDATE` sobre la fila del activo en PostgreSQL, neutralizando cualquier condición de carrera ante traspasos concurrentes.
-- **Generación Automática del Acta Bilateral SABS:** 
-  - Generación de correlativo oficial secuencial `ACTA-TRANS-2026-XXXX`.
-  - Captura inmutable de snapshots del activo y de los custodios (entrega y recepción).
-  - Cálculo de hash `SHA-256` para garantizar la integridad documental y no repudio (D.S. 0181 y Ley 1178).
-- **Observabilidad con OpenTelemetry & Grafana Tempo:** Span explícito `TransferAssetService.generateBilateralActa` con atributos semánticos: `transfer.id`, `asset.qr`, `acta.codigo`, `acta.sha256`.
-- **Interfaz Frontend SCAF:**
-  - Notificación de aprobación destacando el correlativo del acta generada.
-  - Botón interactivo `📄 Generar / Ver Acta` en el historial de transferencias.
-  - Modal oficial con membrete UMSS / SCAF, detalle técnico del activo, cláusula de descargo legal, sello criptográfico SHA-256, triple firma reglamentaria y soporte de impresión PDF (`window.print()`).
+- **Control Transaccional:** `TransferAssetService` ejecuta `prisma.$transaction()` aplicando un bloqueo pesimista `SELECT FOR UPDATE` sobre la fila del activo en PostgreSQL, neutralizando cualquier condición de carrera ante traspasos concurrentes.
+
+#### C) Generación Automática del Acta Bilateral SABS — FSD-UC-005
+- **Endpoints (OpenAPI):** `POST /activos/transferencias/{id}/aprobar`, `GET /activos/transferencias/{id}/acta`.
+- **Criterios de Aceptación (Gherkin):**
+  ```gherkin
+  Dado una solicitud de traspaso aprobada por el Custodio Destino bajo bloqueo transaccional
+  Cuando el sistema confirma la transferencia de custodia en base de datos
+  Entonces genera automáticamente el Acta de Transferencia Bilateral SABS con código único y hash SHA-256
+    Y habilita la descarga del documento legal con los datos del Custodio Origen y Custodio Destino
+  ```
+- **Implementación Técnica:**
+  - `TransferAssetService` genera automáticamente el registro inmutable del acta dentro de la misma transacción ACID (`prisma.$transaction()`).
+  - Asigna un código correlativo oficial único y secuencial en formato `ACTA-TRANS-2026-XXXX`.
+  - Captura snapshots inmutables del activo transferido, del Custodio Origen (entrega) y del Custodio Destino (recepción) con sus respectivas unidades y cargos.
+  - Calcula el hash criptográfico `SHA-256` para garantizar el no repudio e integridad documental conforme al D.S. 0181 (SABS) y la Ley 1178 (SAFCO).
+  - Instrumenta y expone el span explícito de OpenTelemetry (`TransferAssetService.generateBilateralActa`) con los atributos semánticos `transfer.id`, `asset.qr`, `acta.codigo` y `acta.sha256`, visible y correlacionado en Grafana Tempo.
+  - Habilita en la interfaz frontend SCAF (`Transferencias.tsx`) el botón interactivo `📄 Generar / Ver Acta` en la tabla histórica y despliega el modal oficial del Acta Bilateral con membrete UMSS/SCAF, sello SHA-256, cláusula legal de descargo, triple firma reglamentaria y soporte de impresión/descarga en PDF (`window.print()`).
 
 ---
 
 ## 3. Contrato OpenAPI y Verificación de CI
 
-- **Contrato OpenAPI v8.4.0:** [`openapi.json`](../../openapi.json), exportado directamente desde el código fuente de NestJS (`@nestjs/swagger`) con 31 endpoints cubriendo la totalidad de los módulos de Inventario, Bajas SABS, Asignación y Reportes.
+- **Contrato OpenAPI v8.4.0:** [`openapi.json`](../../openapi.json), exportado directamente desde el código fuente de NestJS (`@nestjs/swagger`) con 32 endpoints cubriendo la totalidad de los módulos de Inventario, Bajas SABS, Asignación, Transferencias con Actas Bilaterales y Reportes.
 - **Exportación Automatizada:**  
   ```bash
   npm run openapi:export
@@ -171,5 +175,5 @@ Waterfall de Spans (Duración Total: 42.5 ms)
 1. **Minuto 0:00 – 1:00 (Apertura Grupal):** Presentación del equipo (Guillermo, Josefina, Rita), presentación del tag `v8.4.0` y verificación del contrato en `openapi.json` con Swagger UI.
 2. **Minuto 1:00 – 3:00 (Guillermo Daza):** Demostración en vivo de sincronización offline con resolución LWW y escaneo de inventario QR.
 3. **Minuto 3:00 – 5:00 (Josefina Rojas):** Demostración del workflow de Bajas SABS en frontend y la restauración técnica en caso de rechazo.
-4. **Minuto 5:00 – 7:00 (Rita Nina):** Demostración de Asignación a Custodio con firma y transferencias concurrentes.
+4. **Minuto 5:00 – 7:00 (Rita Nina):** Demostración de Asignación a Custodio con firma, transferencias concurrentes con bloqueo pesimista y la generación automática, consulta y descarga/impresión del Acta Bilateral SABS con sello SHA-256.
 5. **Minuto 7:00 – 8:00 (Pregunta Fija):** Muestra de la terminal k6 con el p95 y visualización de la traza de OpenTelemetry en Grafana Tempo con la explicación del cuello de botella en base de datos.
