@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { AssetRepositoryPort } from '../../../domain/ports/out/asset-repository.port.js';
 import { Asset, AssetStatus } from '../../../domain/models/asset.model.js';
+import { AssetStatusHistory } from '../../../domain/models/asset-status-history.model.js';
 import { PrismaService } from '../../../../compliance/adapters/out/db/prisma.service.js';
 
 @Injectable()
@@ -25,12 +26,30 @@ export class PrismaAssetAdapter implements AssetRepositoryPort {
       record.providerName,
       record.providerNit,
       record.providerPhone,
+      record.statusHistory,
+      record.diagnosticos,
     );
   }
 
   async findById(id: string): Promise<Asset | null> {
     const record = await this.prisma.asset.findUnique({
       where: { id },
+    });
+    if (!record) return null;
+    return this.mapRecordToDomain(record);
+  }
+
+  async findByIdWithHistory(id: string): Promise<Asset | null> {
+    const record = await this.prisma.asset.findUnique({
+      where: { id },
+      include: {
+        statusHistory: {
+          orderBy: { changedAt: 'desc' },
+        },
+        diagnosticos: {
+          orderBy: { fechaEmision: 'desc' },
+        },
+      },
     });
     if (!record) return null;
     return this.mapRecordToDomain(record);
@@ -78,6 +97,74 @@ export class PrismaAssetAdapter implements AssetRepositoryPort {
       orderBy: { updatedAt: 'desc' },
     });
     return records.map((record) => this.mapRecordToDomain(record));
+  }
+
+  async findAllWithFilters(filters: {
+    estado?: string;
+    codigo?: string;
+    unidad?: string;
+  }): Promise<Asset[]> {
+    const whereClause: any = {};
+
+    if (filters.estado) {
+      whereClause.status = {
+        equals: filters.estado,
+        mode: 'insensitive',
+      };
+    }
+
+    if (filters.codigo) {
+      whereClause.qrCode = {
+        contains: filters.codigo,
+        mode: 'insensitive',
+      };
+    }
+
+    if (filters.unidad) {
+      whereClause.location = {
+        contains: filters.unidad,
+        mode: 'insensitive',
+      };
+    }
+
+    const records = await this.prisma.asset.findMany({
+      where: whereClause,
+      include: {
+        statusHistory: {
+          orderBy: { changedAt: 'desc' },
+        },
+        diagnosticos: {
+          orderBy: { fechaEmision: 'desc' },
+        },
+      },
+      orderBy: { updatedAt: 'desc' },
+    });
+
+    return records.map((record) => this.mapRecordToDomain(record));
+  }
+
+  async recordStatusChange(history: AssetStatusHistory): Promise<AssetStatusHistory> {
+    const record = await this.prisma.assetStatusHistory.create({
+      data: {
+        id: history.id,
+        assetId: history.assetId,
+        previousStatus: history.previousStatus,
+        newStatus: history.newStatus,
+        reason: history.reason,
+        changedBy: history.changedBy,
+        changedAt: history.changedAt || new Date(),
+      },
+    });
+
+    return new AssetStatusHistory(
+      record.id,
+      record.assetId,
+      record.previousStatus,
+      record.newStatus,
+      record.reason || undefined,
+      record.changedBy || undefined,
+      record.changedAt,
+    );
   }
 
   async saveMaintenanceReport(report: {

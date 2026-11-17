@@ -10,6 +10,7 @@ generator client {
 model Baja {
   id            String   @id @default(uuid())
   assetId       String   @unique
+  diagnosticoId String?
   jefeId        String
   justification String
   evidence      String
@@ -44,6 +45,8 @@ model Asset {
   movements       Movement[]
   maintenances    MaintenanceReport[]
   transfers       Transfer[]
+  diagnosticos    DiagnosticoTecnico[]
+  statusHistory   AssetStatusHistory[]
 }
 
 // Modelo de Geolocalización y Escaneo (Historial de ubicaciones)
@@ -145,3 +148,44 @@ model InventoryRecord {
   @@unique([campaignId, assetId])
   @@map("inventory_records")
 }
+
+// Modelo de Diagnóstico Técnico Previo a Baja SABS
+model DiagnosticoTecnico {
+  id                      String    @id @default(uuid())
+  numeroInforme           String    @unique // ej. INF-TEC-2026-001
+  assetId                 String
+  tecnicoId               String?
+  tecnicoNombre           String?
+  causalSabs              String    // OBSOLESCENCIA, DETERIORO_IRREPARABLE, SINIESTRO, INCOMPATIBILIDAD_TECNICA, HURTO_O_ROBO
+  diagnosticoDetalle      String    // Detalle técnico de la inspección/falla
+  recomendacion           String    // RECOMENDAR_BAJA, REPARAR, REASIGNAR
+  dictaminaBaja           Boolean   @default(true)
+  evidenciaDocumento      String?   // URL o identificador del documento de evidencia
+  costoEstimadoReparacion Float?    @default(0)
+  estado                  String    @default("VIGENTE") // VIGENTE, UTILIZADO_EN_BAJA, RESTAURADO, ANULADO
+  fechaEmision            DateTime  @default(now())
+  observaciones           String?
+
+  asset                   Asset     @relation(fields: [assetId], references: [id], onDelete: Cascade)
+
+  @@index([assetId])
+  @@index([estado])
+  @@map("diagnosticos_tecnicos")
+}
+
+// Modelo de Trazabilidad e Historial de Cambios de Estado Patrimoniales SABS
+model AssetStatusHistory {
+  id             String   @id @default(uuid())
+  assetId        String
+  previousStatus String
+  newStatus      String
+  reason         String?
+  changedBy      String?
+  changedAt      DateTime @default(now())
+
+  asset          Asset    @relation(fields: [assetId], references: [id], onDelete: Cascade)
+
+  @@index([assetId])
+  @@map("asset_status_history")
+}
+

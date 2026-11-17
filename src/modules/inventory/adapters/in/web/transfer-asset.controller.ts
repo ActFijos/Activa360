@@ -62,7 +62,10 @@ export class TransferAssetController {
   }
 
   @Get('transferencias')
-  @ApiOperation({ summary: 'Listar todas las transferencias registradas' })
+  @ApiOperation({
+    summary: 'Listar todas las transferencias registradas',
+    description: 'Recupera el historial completo de transferencias patrimoniales entre unidades y custodios.',
+  })
   @ApiResponse({ status: 200, description: 'Lista de transferencias.' })
   async getTransfers() {
     return this.transferRepository.findAll();
@@ -70,7 +73,10 @@ export class TransferAssetController {
 
   @Post('transferencias/:id/aprobar')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Aprobar una transferencia pendiente y actualizar estado del activo' })
+  @ApiOperation({
+    summary: 'Aprobar una transferencia pendiente y actualizar estado del activo',
+    description: 'Aprueba la transferencia pendiente, reasigna la custodia y actualiza la ubicación física del bien.',
+  })
   @ApiParam({ name: 'id', description: 'ID de la transferencia a aprobar' })
   @ApiResponse({ status: 200, description: 'Transferencia aprobada exitosamente.' })
   @ApiResponse({ status: 404, description: 'Transferencia o activo no encontrado.' })
@@ -120,7 +126,10 @@ export class TransferAssetController {
 
   @Post('transferencias/:id/rechazar')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Rechazar una transferencia pendiente' })
+  @ApiOperation({
+    summary: 'Rechazar una transferencia pendiente',
+    description: 'Rechaza la solicitud de transferencia pendiente manteniendo la custodia y ubicación actual.',
+  })
   @ApiParam({ name: 'id', description: 'ID de la transferencia a rechazar' })
   @ApiResponse({ status: 200, description: 'Transferencia rechazada exitosamente.' })
   @ApiResponse({ status: 404, description: 'Transferencia no encontrada.' })

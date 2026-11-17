@@ -9,6 +9,7 @@ import { BajaRepositoryPort } from '../ports/out/baja-repository.port.js';
 import { AssetServicePort } from '../ports/out/asset-service.port.js';
 import { Baja, BajaStatus } from '../models/baja.model.js';
 import { PrismaService } from '../../adapters/out/db/prisma.service.js';
+import { randomUUID } from 'crypto';
 
 @Injectable()
 export class RejectBajaService implements RejectBajaUseCase {
@@ -42,18 +43,60 @@ export class RejectBajaService implements RejectBajaUseCase {
       );
     }
 
-    // 4. Determinar estado destino del activo (Dañado u Obsoleto según último diagnóstico)
+    // 4. Determinar estado destino del activo y restaurar diagnóstico técnico condicionalmente
     let targetStatus = 'Dañado';
     try {
-      const lastInspection = await this.prisma.maintenanceReport.findFirst({
-        where: { assetId: baja.assetId },
-        orderBy: { inspectedAt: 'desc' },
-      });
-      if (lastInspection && lastInspection.diagnosis.toLowerCase().includes('obsole')) {
-        targetStatus = 'Obsoleto';
+      if (this.prisma && (this.prisma as any).diagnosticoTecnico) {
+        const diag = await (this.prisma as any).diagnosticoTecnico.findFirst({
+          where: {
+            assetId: baja.assetId,
+            estado: { equals: 'UTILIZADO_EN_BAJA', mode: 'insensitive' },
+          },
+          orderBy: { fechaEmision: 'desc' },
+        });
+
+        if (diag) {
+          await (this.prisma as any).diagnosticoTecnico.update({
+            where: { id: diag.id },
+            data: { estado: 'RESTAURADO' },
+          });
+
+          if (
+            diag.causalSabs === 'OBSOLESCENCIA' ||
+            diag.diagnosticoDetalle?.toLowerCase().includes('obsole')
+          ) {
+            targetStatus = 'Obsoleto';
+          } else if (diag.dictaminaBaja) {
+            targetStatus = 'APTO_PARA_BAJA';
+          }
+        }
+      }
+
+      if (targetStatus === 'Dañado' && this.prisma && (this.prisma as any).maintenanceReport) {
+        const lastInspection = await (this.prisma as any).maintenanceReport.findFirst({
+          where: { assetId: baja.assetId },
+          orderBy: { inspectedAt: 'desc' },
+        });
+        if (lastInspection && lastInspection.diagnosis?.toLowerCase().includes('obsole')) {
+          targetStatus = 'Obsoleto';
+        }
+      }
+
+      if (this.prisma && (this.prisma as any).assetStatusHistory) {
+        await (this.prisma as any).assetStatusHistory.create({
+          data: {
+            id: randomUUID(),
+            assetId: baja.assetId,
+            previousStatus: 'En_Proceso_Baja',
+            newStatus: targetStatus,
+            reason: `Rechazo normativo de baja SABS: ${motivoRechazo.trim()}`,
+            changedBy: 'Supervisor SABS',
+            changedAt: new Date(),
+          },
+        });
       }
     } catch {
-      // Si la consulta de inspección falla o no aplica, se mantiene Dañado
+      // Si la consulta de inspección/diagnóstico falla, se mantiene Dañado
     }
 
     // 5. Restaurar estado del activo a revisión técnica

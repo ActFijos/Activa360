@@ -34,6 +34,22 @@ import { RegisterInventoryScanService } from './domain/services/register-invento
 import { InventoryRecordRepositoryPort } from './domain/ports/out/inventory-record-repository.port.js';
 import { PrismaInventoryRecordAdapter } from './adapters/out/db/prisma-inventory-record.adapter.js';
 
+// Features Release 8.2.0 - Josefina Rojas:
+// Feature 1: Control de Estados Patrimoniales SABS
+import { ChangeAssetStatusUseCase } from './domain/ports/in/change-asset-status.use-case.js';
+import { ChangeAssetStatusService } from './domain/services/change-asset-status.service.js';
+
+// Feature 2: Diagnóstico Técnico Previo a Bajas SABS
+import { DiagnosticoController } from './adapters/in/web/diagnostico.controller.js';
+import { CreateDiagnosticoUseCase } from './domain/ports/in/create-diagnostico.use-case.js';
+import { CreateDiagnosticoService } from './domain/services/create-diagnostico.service.js';
+import { ListDiagnosticosUseCase } from './domain/ports/in/list-diagnosticos.use-case.js';
+import { ListDiagnosticosService } from './domain/services/list-diagnosticos.service.js';
+import { GetDiagnosticoByIdUseCase } from './domain/ports/in/get-diagnostico-by-id.use-case.js';
+import { GetDiagnosticoByIdService } from './domain/services/get-diagnostico-by-id.service.js';
+import { DiagnosticoRepositoryPort } from './domain/ports/out/diagnostico-repository.port.js';
+import { PrismaDiagnosticoAdapter } from './adapters/out/db/prisma-diagnostico.adapter.js';
+
 // Reportes
 import { ReportsStatsController } from './adapters/in/web/reports-stats.controller.js';
 
@@ -44,6 +60,7 @@ import { UsersController } from './adapters/in/web/users.controller.js';
   controllers: [
     ScanQrController,
     RegisterAssetController,
+    DiagnosticoController,
     AssignAssetController,
     TransferAssetController,
     InventoryScanController,
@@ -65,11 +82,29 @@ import { UsersController } from './adapters/in/web/users.controller.js';
       useClass: RegisterAssetService,
     },
     {
+      provide: ChangeAssetStatusUseCase,
+      useClass: ChangeAssetStatusService,
+    },
+    {
+      provide: CreateDiagnosticoUseCase,
+      useClass: CreateDiagnosticoService,
+    },
+    {
+      provide: ListDiagnosticosUseCase,
+      useClass: ListDiagnosticosService,
+    },
+    {
+      provide: GetDiagnosticoByIdUseCase,
+      useClass: GetDiagnosticoByIdService,
+    },
+    {
+      provide: DiagnosticoRepositoryPort,
+      useClass: PrismaDiagnosticoAdapter,
+    },
+    {
       provide: AssignAssetUseCase,
       useClass: AssignAssetService,
     },
-    // Feature 2: TransferAssetService ahora usa PrismaService directamente
-    // para implementar $transaction + SELECT FOR UPDATE (bloqueo pesimista)
     {
       provide: TransferAssetUseCase,
       useClass: TransferAssetService,
@@ -90,7 +125,6 @@ import { UsersController } from './adapters/in/web/users.controller.js';
       provide: MovementRepositoryPort,
       useClass: InMemoryMovementRepository,
     },
-    // Feature 1: Registro de inventario QR con control de concurrencia
     {
       provide: RegisterInventoryScanUseCase,
       useClass: RegisterInventoryScanService,
@@ -104,6 +138,11 @@ import { UsersController } from './adapters/in/web/users.controller.js';
     ScanQrUseCase,
     SyncOfflineUseCase,
     RegisterAssetUseCase,
+    ChangeAssetStatusUseCase,
+    CreateDiagnosticoUseCase,
+    ListDiagnosticosUseCase,
+    GetDiagnosticoByIdUseCase,
+    DiagnosticoRepositoryPort,
     AssignAssetUseCase,
     TransferAssetUseCase,
     AssetRepositoryPort,

@@ -84,6 +84,7 @@
       "^.+\\.(t|j)s$": "ts-jest"
     },
     "moduleNameMapper": {
+      "^@nestjs/swagger$": "<rootDir>/../test/__mocks__/@nestjs/swagger.js",
       "^(\\..*)\\.js$": "$1"
     },
     "collectCoverageFrom": [

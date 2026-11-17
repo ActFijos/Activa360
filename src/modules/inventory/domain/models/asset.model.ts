@@ -1,9 +1,14 @@
 export enum AssetStatus {
   NUEVO = 'Nuevo',
+  DISPONIBLE = 'DISPONIBLE',
+  ACTIVO = 'ACTIVO',
   ASIGNADO = 'Asignado',
   EN_TRASPASO = 'En_Traspaso',
+  EN_MANTENIMIENTO = 'EN_MANTENIMIENTO',
+  EN_DIAGNOSTICO = 'EN_DIAGNOSTICO',
   DANADO = 'Dañado',
   OBSOLETO = 'Obsoleto',
+  APTO_PARA_BAJA = 'APTO_PARA_BAJA',
   EN_PROCESO_BAJA = 'En_Proceso_Baja',
   DADO_DE_BAJA = 'Dado_De_Baja',
 }
@@ -16,7 +21,7 @@ export class Asset {
     public status: AssetStatus,
     public location: string,
     public updatedAt: Date,
-    // Nuevos campos opcionales del formulario
+    // Campos opcionales del formulario / SABS
     public readonly category?: string,
     public readonly usefulLife?: number,
     public readonly origin?: string,
@@ -27,6 +32,8 @@ export class Asset {
     public readonly providerName?: string,
     public readonly providerNit?: string,
     public readonly providerPhone?: string,
+    public statusHistory?: any[],
+    public diagnosticos?: any[],
   ) {}
 
   updateLocationAndStatus(newLocation: string, newStatus?: AssetStatus) {

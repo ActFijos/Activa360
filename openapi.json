@@ -3,20 +3,23 @@
   "paths": {
     "/": {
       "get": {
+        "description": "Comprueba el estado de disponibilidad y respuesta de la API Activa360",
         "operationId": "AppController_getHello",
         "parameters": [],
         "responses": {
           "200": {
-            "description": ""
+            "description": "Servicio en ejecución"
           }
         },
+        "summary": "Endpoint raíz de salud del sistema",
         "tags": [
-          "App"
+          "app"
         ]
       }
     },
     "/activos/qr": {
       "post": {
+        "description": "Registra la lectura física y ubicación geográfica del código QR de un activo patrimonial.",
         "operationId": "ScanQrController_scanQr",
         "parameters": [],
         "requestBody": {
@@ -31,16 +34,18 @@
         },
         "responses": {
           "200": {
-            "description": ""
+            "description": "Escaneo registrado exitosamente"
           }
         },
+        "summary": "Registrar escaneo de código QR de un activo",
         "tags": [
-          "ScanQr"
+          "inventario"
         ]
       }
     },
     "/activos/sync": {
       "post": {
+        "description": "Procesa un lote de actualizaciones de inventario tomadas fuera de línea con resolución de timestamps.",
         "operationId": "ScanQrController_syncOffline",
         "parameters": [],
         "requestBody": {
@@ -55,16 +60,18 @@
         },
         "responses": {
           "200": {
-            "description": ""
+            "description": "Lote sincronizado exitosamente"
           }
         },
+        "summary": "Sincronizar lote de escaneos offline",
         "tags": [
-          "ScanQr"
+          "inventario"
         ]
       }
     },
     "/activos": {
       "post": {
+        "description": "Registra un nuevo activo fijo patrimonial validando unicidad de código SABS/QR, descripción, categoría, fecha de adquisición, valor histórico y estado inicial (DISPONIBLE o ACTIVO).",
         "operationId": "RegisterAssetController_registerAsset",
         "parameters": [],
         "requestBody": {
@@ -79,57 +86,274 @@
         },
         "responses": {
           "201": {
-            "description": ""
+            "description": "Activo patrimonial registrado exitosamente en el inventario",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssetResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Datos del activo patrimonial inválidos o incompletos"
+          },
+          "409": {
+            "description": "Conflicto: Ya existe un activo registrado con el mismo código patrimonial/QR"
           }
         },
+        "summary": "Alta y registro de bien patrimonial con código SABS único",
         "tags": [
-          "RegisterAsset"
+          "activos"
         ]
       },
       "get": {
+        "description": "Recupera la lista de activos fijos patrimoniales permitiendo filtrar por estado normativo, código SABS o unidad administrativa, incluyendo trazabilidad de cambios de estado.",
         "operationId": "RegisterAssetController_getAllAssets",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "tags": [
-          "RegisterAsset"
-        ]
-      }
-    },
-    "/activos/qr/{qrCode}": {
-      "get": {
-        "operationId": "RegisterAssetController_getAssetByQrCode",
         "parameters": [
           {
-            "name": "qrCode",
-            "required": true,
-            "in": "path",
+            "name": "estado",
+            "required": false,
+            "in": "query",
+            "description": "Filtrar bienes patrimoniales por estado (ej. DISPONIBLE, ASIGNADO, EN_DIAGNOSTICO, APTO_PARA_BAJA, Dañado, Obsoleto, Dado_De_Baja)",
             "schema": {
+              "example": "APTO_PARA_BAJA",
+              "type": "string"
+            }
+          },
+          {
+            "name": "codigo",
+            "required": false,
+            "in": "query",
+            "description": "Filtrar por coincidencia en el código QR o código SABS patrimonial",
+            "schema": {
+              "example": "ACT-2026",
+              "type": "string"
+            }
+          },
+          {
+            "name": "unidad",
+            "required": false,
+            "in": "query",
+            "description": "Filtrar por unidad administrativa, departamento o ubicación física",
+            "schema": {
+              "example": "Tecnologías",
               "type": "string"
             }
           }
         ],
         "responses": {
           "200": {
-            "description": ""
+            "description": "Listado de bienes patrimoniales recuperado exitosamente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AssetResponseDto"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Parámetros de búsqueda o filtros inválidos"
           }
         },
+        "summary": "Consultar y listar bienes patrimoniales con filtros",
         "tags": [
-          "RegisterAsset"
+          "activos"
+        ]
+      }
+    },
+    "/activos/qr/{qrCode}": {
+      "get": {
+        "description": "Obtiene los datos de un activo a partir de su código QR o código patrimonial SABS único.",
+        "operationId": "RegisterAssetController_getAssetByQrCode",
+        "parameters": [
+          {
+            "name": "qrCode",
+            "required": true,
+            "in": "path",
+            "description": "Código QR o código patrimonial único del activo",
+            "schema": {
+              "example": "ACT-2026-001",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Activo patrimonial encontrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssetResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Activo con el código especificado no encontrado"
+          }
+        },
+        "summary": "Buscar activo por código QR o código SABS",
+        "tags": [
+          "activos"
+        ]
+      }
+    },
+    "/activos/{id}": {
+      "get": {
+        "description": "Recupera el detalle exhaustivo del activo patrimonial por UUID, incluyendo su historial de transiciones de estado SABS e informes de diagnóstico técnico asociados.",
+        "operationId": "RegisterAssetController_getAssetById",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Identificador único (UUID) del activo patrimonial",
+            "schema": {
+              "example": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Detalle del activo patrimonial con historial de trazabilidad",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssetResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Activo patrimonial no encontrado"
+          }
+        },
+        "summary": "Consultar bien patrimonial por ID con trazabilidad completa de estados",
+        "tags": [
+          "activos"
+        ]
+      }
+    },
+    "/activos/{id}/estado": {
+      "patch": {
+        "description": "Ejecuta una transición de estado controlada por la normativa SABS (ej. DISPONIBLE -> ASIGNADO / EN_MANTENIMIENTO -> EN_DIAGNOSTICO -> APTO_PARA_BAJA). Bloquea transiciones no permitidas y estados terminales (Dado_De_Baja), guardando la trazabilidad histórica.",
+        "operationId": "RegisterAssetController_changeStatus",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Identificador único (UUID) del activo patrimonial a transicionar",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChangeAssetStatusDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Transición de estado ejecutada exitosamente y registrada en la trazabilidad",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssetResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Datos de transición inválidos o motivo insuficiente"
+          },
+          "404": {
+            "description": "Activo patrimonial no encontrado"
+          },
+          "409": {
+            "description": "Conflicto normativo SABS: Transición no permitida o activo en estado terminal"
+          }
+        },
+        "summary": "Transición controlada de estados patrimoniales SABS",
+        "tags": [
+          "activos"
+        ]
+      }
+    },
+    "/activos/{id}/diagnosticos": {
+      "post": {
+        "description": "Registra un informe pericial de evaluación técnica con número de informe correlativo, causal SABS (obsolescencia, deterioro irreparable, etc.), dictamen y recomendación. Si dictamina baja, transiciona automáticamente el activo a APTO_PARA_BAJA y deja el diagnóstico en estado VIGENTE para habilitar el workflow de bajas.",
+        "operationId": "RegisterAssetController_createDiagnostico",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Identificador único (UUID) del activo a diagnosticar",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateDiagnosticoDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Informe de diagnóstico técnico emitido exitosamente en estado VIGENTE",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DiagnosticoResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Datos del diagnóstico o causal SABS inválidos"
+          },
+          "404": {
+            "description": "Activo patrimonial no encontrado"
+          },
+          "409": {
+            "description": "Conflicto: Número de informe duplicado o activo en estado terminal Dado_De_Baja"
+          }
+        },
+        "summary": "Emitir informe de diagnóstico técnico previo a baja patrimonial SABS",
+        "tags": [
+          "activos"
         ]
       }
     },
     "/activos/{id}/inspeccionar": {
       "post": {
+        "description": "Registra una inspección de mantenimiento básica en el activo para fines preventivos o correctivos.",
         "operationId": "RegisterAssetController_inspectAsset",
         "parameters": [
           {
             "name": "id",
             "required": true,
             "in": "path",
+            "description": "Identificador único (UUID) del activo a inspeccionar",
             "schema": {
               "type": "string"
             }
@@ -147,16 +371,107 @@
         },
         "responses": {
           "200": {
-            "description": ""
+            "description": "Inspección técnica registrada exitosamente"
+          },
+          "404": {
+            "description": "Activo no encontrado"
           }
         },
+        "summary": "Registrar inspección técnica básica de mantenimiento",
         "tags": [
-          "RegisterAsset"
+          "activos"
+        ]
+      }
+    },
+    "/diagnosticos": {
+      "get": {
+        "description": "Recupera el listado de informes de diagnóstico técnico emitidos, permitiendo filtrar por estado normativo (VIGENTE, UTILIZADO_EN_BAJA, RESTAURADO, ANULADO) y por identificador del activo evaluado.",
+        "operationId": "DiagnosticoController_listDiagnosticos",
+        "parameters": [
+          {
+            "name": "estado",
+            "required": false,
+            "in": "query",
+            "description": "Filtrar diagnósticos por estado normativo (VIGENTE, UTILIZADO_EN_BAJA, RESTAURADO, ANULADO)",
+            "schema": {
+              "example": "VIGENTE",
+              "type": "string"
+            }
+          },
+          {
+            "name": "activo_id",
+            "required": false,
+            "in": "query",
+            "description": "Filtrar por identificador único del activo evaluado (UUID)",
+            "schema": {
+              "example": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Listado de diagnósticos técnicos recuperado exitosamente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/DiagnosticoResponseDto"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Parámetros de consulta inválidos"
+          }
+        },
+        "summary": "Listar informes de diagnóstico técnico previo a baja SABS",
+        "tags": [
+          "diagnosticos"
+        ]
+      }
+    },
+    "/diagnosticos/{id}": {
+      "get": {
+        "description": "Obtiene el detalle completo de un informe de diagnóstico técnico emitido, incluyendo su causal SABS, dictamen y estado normativo.",
+        "operationId": "DiagnosticoController_getDiagnosticoById",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Identificador único (UUID) del informe de diagnóstico técnico",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Informe de diagnóstico técnico encontrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DiagnosticoResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Informe de diagnóstico técnico no encontrado"
+          }
+        },
+        "summary": "Consultar informe de diagnóstico técnico por ID",
+        "tags": [
+          "diagnosticos"
         ]
       }
     },
     "/activos/asignar": {
       "post": {
+        "description": "Establece la responsabilidad de custodia física de un activo patrimonial a un funcionario.",
         "operationId": "AssignAssetController_assignAsset",
         "parameters": [],
         "requestBody": {
@@ -171,39 +486,44 @@
         },
         "responses": {
           "200": {
-            "description": ""
+            "description": "Asignación realizada exitosamente"
           }
         },
+        "summary": "Asignar activo a un custodio o funcionario",
         "tags": [
-          "AssignAsset"
+          "activos"
         ]
       }
     },
     "/activos/asignaciones": {
       "get": {
+        "description": "Obtiene la lista de todas las asignaciones históricas y vigentes de activos a custodios.",
         "operationId": "AssignAssetController_getAssignments",
         "parameters": [],
         "responses": {
           "200": {
-            "description": ""
+            "description": "Lista de asignaciones obtenida exitosamente"
           }
         },
+        "summary": "Listar historial de asignaciones de custodia",
         "tags": [
-          "AssignAsset"
+          "activos"
         ]
       }
     },
     "/activos/empleados": {
       "get": {
+        "description": "Obtiene la nómina de empleados habilitados para recibir la custodia de bienes patrimoniales.",
         "operationId": "AssignAssetController_getEmployees",
         "parameters": [],
         "responses": {
           "200": {
-            "description": ""
+            "description": "Lista de empleados obtenida"
           }
         },
+        "summary": "Listar empleados y custodios habilitados",
         "tags": [
-          "AssignAsset"
+          "activos"
         ]
       }
     },
@@ -253,6 +573,7 @@
     },
     "/activos/transferencias": {
       "get": {
+        "description": "Recupera el historial completo de transferencias patrimoniales entre unidades y custodios.",
         "operationId": "TransferAssetController_getTransfers",
         "parameters": [],
         "responses": {
@@ -268,6 +589,7 @@
     },
     "/activos/transferencias/{id}/aprobar": {
       "post": {
+        "description": "Aprueba la transferencia pendiente, reasigna la custodia y actualiza la ubicación física del bien.",
         "operationId": "TransferAssetController_approveTransfer",
         "parameters": [
           {
@@ -296,6 +618,7 @@
     },
     "/activos/transferencias/{id}/rechazar": {
       "post": {
+        "description": "Rechaza la solicitud de transferencia pendiente manteniendo la custodia y ubicación actual.",
         "operationId": "TransferAssetController_rejectTransfer",
         "parameters": [
           {
@@ -383,6 +706,7 @@
     },
     "/activos/reportes/estadisticas": {
       "get": {
+        "description": "Calcula indicadores agregados de activos por ubicación, estado y depreciación mensual.",
         "operationId": "ReportsStatsController_getStats",
         "parameters": [
           {
@@ -412,16 +736,18 @@
         ],
         "responses": {
           "200": {
-            "description": ""
+            "description": "Estadísticas agregadas calculadas exitosamente"
           }
         },
+        "summary": "Obtener métricas y estadísticas consolidadas",
         "tags": [
-          "ReportsStats"
+          "reportes"
         ]
       }
     },
     "/activos/reportes/depreciacion": {
       "get": {
+        "description": "Genera el reporte de valor actual y depreciación anual acumulada según vida útil.",
         "operationId": "ReportsStatsController_getDepreciacion",
         "parameters": [
           {
@@ -451,16 +777,18 @@
         ],
         "responses": {
           "200": {
-            "description": ""
+            "description": "Cálculo de depreciación obtenido"
           }
         },
+        "summary": "Reporte de depreciación acumulada de activos",
         "tags": [
-          "ReportsStats"
+          "reportes"
         ]
       }
     },
     "/activos/reportes/inventario": {
       "get": {
+        "description": "Genera el listado consolidado de inventario para fines de auditoría.",
         "operationId": "ReportsStatsController_getInventario",
         "parameters": [
           {
@@ -490,16 +818,18 @@
         ],
         "responses": {
           "200": {
-            "description": ""
+            "description": "Reporte de inventario obtenido"
           }
         },
+        "summary": "Reporte de inventario físico",
         "tags": [
-          "ReportsStats"
+          "reportes"
         ]
       }
     },
     "/activos/reportes/valoracion": {
       "get": {
+        "description": "Genera el balance global de valoración patrimonial e inversión en activos.",
         "operationId": "ReportsStatsController_getValoracion",
         "parameters": [
           {
@@ -529,16 +859,18 @@
         ],
         "responses": {
           "200": {
-            "description": ""
+            "description": "Reporte de valoración patrimonial obtenido"
           }
         },
+        "summary": "Reporte de valoración patrimonial",
         "tags": [
-          "ReportsStats"
+          "reportes"
         ]
       }
     },
     "/activos/reportes/mantenimiento": {
       "get": {
+        "description": "Genera el historial de informes técnicos y costos de mantenimiento.",
         "operationId": "ReportsStatsController_getMantenimiento",
         "parameters": [
           {
@@ -568,16 +900,18 @@
         ],
         "responses": {
           "200": {
-            "description": ""
+            "description": "Reporte de mantenimiento obtenido"
           }
         },
+        "summary": "Reporte de mantenimientos e inspecciones",
         "tags": [
-          "ReportsStats"
+          "reportes"
         ]
       }
     },
     "/activos/reportes/bajas": {
       "get": {
+        "description": "Genera el historial de trámites de baja iniciados, aprobados o rechazados.",
         "operationId": "ReportsStatsController_getBajas",
         "parameters": [
           {
@@ -607,16 +941,18 @@
         ],
         "responses": {
           "200": {
-            "description": ""
+            "description": "Reporte de bajas obtenido"
           }
         },
+        "summary": "Reporte consolidado de bajas patrimoniales",
         "tags": [
-          "ReportsStats"
+          "reportes"
         ]
       }
     },
     "/activos/reportes/transferencias": {
       "get": {
+        "description": "Genera el historial de movimientos de traspaso de activos entre unidades.",
         "operationId": "ReportsStatsController_getTransferencias",
         "parameters": [
           {
@@ -646,62 +982,71 @@
         ],
         "responses": {
           "200": {
-            "description": ""
+            "description": "Reporte de transferencias obtenido"
           }
         },
+        "summary": "Reporte de transferencias patrimoniales",
         "tags": [
-          "ReportsStats"
+          "reportes"
         ]
       }
     },
     "/activos/reportes/alertas-notificaciones": {
       "get": {
+        "description": "Genera el consolidado de alertas patrimoniales, activos pendientes de inspección y garantías por vencer.",
         "operationId": "ReportsStatsController_getAlertasNotificaciones",
         "parameters": [],
         "responses": {
           "200": {
-            "description": ""
+            "description": "Alertas y notificaciones obtenidas"
           }
         },
+        "summary": "Reporte de alertas y notificaciones del sistema",
         "tags": [
-          "ReportsStats"
+          "reportes"
         ]
       }
     },
     "/usuarios": {
       "get": {
+        "description": "Recupera el listado completo de usuarios registrados en el sistema Activa360.",
         "operationId": "UsersController_getAll",
         "parameters": [],
         "responses": {
           "200": {
-            "description": ""
+            "description": "Listado de usuarios obtenido"
           }
         },
+        "summary": "Listar usuarios del sistema",
         "tags": [
-          "Users"
+          "usuarios"
         ]
       },
       "post": {
+        "description": "Registra un nuevo usuario con rol de Administrador, Supervisor o Inventariador.",
         "operationId": "UsersController_create",
         "parameters": [],
         "responses": {
           "201": {
-            "description": ""
+            "description": "Usuario creado exitosamente"
           }
         },
+        "summary": "Crear nuevo usuario del sistema",
         "tags": [
-          "Users"
+          "usuarios"
         ]
       }
     },
     "/usuarios/{id}": {
       "put": {
+        "description": "Actualiza los datos de perfil o rol de un usuario existente.",
         "operationId": "UsersController_update",
         "parameters": [
           {
             "name": "id",
             "required": true,
             "in": "path",
+            "description": "ID único del usuario a actualizar",
             "schema": {
               "type": "string"
             }
@@ -709,20 +1054,23 @@
         ],
         "responses": {
           "200": {
-            "description": ""
+            "description": "Usuario actualizado exitosamente"
           }
         },
+        "summary": "Actualizar datos de un usuario",
         "tags": [
-          "Users"
+          "usuarios"
         ]
       },
       "delete": {
-        "operationId": "UsersController_remove",
+        "description": "Elimina el registro de un usuario por su identificador único.",
+        "operationId": "UsersController_delete",
         "parameters": [
           {
             "name": "id",
             "required": true,
             "in": "path",
+            "description": "ID único del usuario a eliminar",
             "schema": {
               "type": "string"
             }
@@ -730,16 +1078,18 @@
         ],
         "responses": {
           "200": {
-            "description": ""
+            "description": "Usuario eliminado exitosamente"
           }
         },
+        "summary": "Eliminar usuario del sistema",
         "tags": [
-          "Users"
+          "usuarios"
         ]
       }
     },
     "/bajas": {
       "post": {
+        "description": "Inicia formalmente el trámite de baja patrimonial SABS, verificando que el bien patrimonial esté en estado Dañado, Obsoleto o APTO_PARA_BAJA, consumiendo el informe técnico vigente y actualizando su estado a En_Proceso_Baja.",
         "operationId": "InitiateBajaController_initiateBaja",
         "parameters": [],
         "requestBody": {
@@ -779,6 +1129,7 @@
         ]
       },
       "get": {
+        "description": "Obtiene el listado paginado de trámites de baja patrimoniales registrados con opciones de filtrado por estado, búsqueda de activo y rangos de fechas.",
         "operationId": "InitiateBajaController_getBajas",
         "parameters": [
           {
@@ -875,6 +1226,7 @@
     },
     "/bajas/{id}/aprobar": {
       "post": {
+        "description": "Dictamina la aprobación definitiva del trámite de baja SABS, actualizando el estado de la baja a APROBADA y retirando el bien patrimonial al estado terminal Dado_De_Baja.",
         "operationId": "InitiateBajaController_approveBaja",
         "parameters": [
           {
@@ -903,6 +1255,7 @@
     },
     "/bajas/{id}/rechazar": {
       "post": {
+        "description": "Rechaza de forma fundamentada un trámite de baja patrimonial en estado INICIADA, actualizando a RECHAZADA, registrando el motivo obligatorio y ejecutando la restauración condicional del diagnóstico técnico y del estado del bien patrimonial.",
         "operationId": "InitiateBajaController_rejectBaja",
         "parameters": [
           {
@@ -951,6 +1304,7 @@
     },
     "/asistente-ia/preguntar": {
       "post": {
+        "description": "Envía una consulta en lenguaje natural sobre activos patrimoniales, normativas o procedimientos.",
         "operationId": "AiAssistantController_preguntar",
         "parameters": [
           {
@@ -963,17 +1317,19 @@
           }
         ],
         "responses": {
-          "201": {
-            "description": ""
+          "200": {
+            "description": "Respuesta generada por el asistente inteligente"
           }
         },
+        "summary": "Consultar al Asistente Inteligente de Activos Fijos",
         "tags": [
-          "AiAssistant"
+          "asistente"
         ]
       }
     },
     "/asistente-ia-mcp/preguntar": {
       "post": {
+        "description": "Envía una consulta asistida por herramientas de contexto Model Context Protocol para activos fijos.",
         "operationId": "AiAssistantMcpController_preguntar",
         "parameters": [
           {
@@ -986,37 +1342,63 @@
           }
         ],
         "responses": {
-          "201": {
-            "description": ""
+          "200": {
+            "description": "Respuesta generada vía protocolo MCP"
           }
         },
+        "summary": "Consultar al Asistente IA con herramientas MCP",
         "tags": [
-          "AiAssistantMcp"
+          "asistente"
         ]
       }
     }
   },
   "info": {
     "title": "Activa360 API",
-    "description": "API de gestión de activos fijos — Inventario QR, Transferencias y Bajas SABS",
+    "description": "API de gestión de activos fijos — Inventario QR, Transferencias, Control de Estados Patrimoniales, Diagnósticos Técnicos y Bajas SABS",
     "version": "8.2.0",
     "contact": {}
   },
   "tags": [
     {
-      "name": "inventario",
-      "description": "Escaneo QR y registro de inventario por campaña"
+      "name": "activos",
+      "description": "Registro, administración, consulta y transición de estados patrimoniales SABS"
     },
     {
-      "name": "activos",
-      "description": "Registro, asignación y transferencia de activos"
+      "name": "diagnosticos",
+      "description": "Emisión, consulta y restauración de informes técnicos previos a bajas SABS"
     },
     {
       "name": "compliance",
       "description": "Bajas SABS y flujos de cumplimiento normativo"
+    },
+    {
+      "name": "inventario",
+      "description": "Escaneo QR y registro de inventario por campaña"
+    },
+    {
+      "name": "reportes",
+      "description": "Estadísticas, depreciación, inventario y valoración patrimonial"
+    },
+    {
+      "name": "usuarios",
+      "description": "Gestión de usuarios y personal del sistema"
+    },
+    {
+      "name": "asistente",
+      "description": "Consultas en lenguaje natural y asistencia inteligente con protocolo MCP"
+    },
+    {
+      "name": "app",
+      "description": "Endpoints base y salud del sistema"
     }
   ],
-  "servers": [],
+  "servers": [
+    {
+      "url": "http://localhost:3000",
+      "description": "Servidor local de desarrollo"
+    }
+  ],
   "components": {
     "securitySchemes": {
       "bearer": {
@@ -1036,7 +1418,398 @@
       },
       "RegisterAssetDto": {
         "type": "object",
-        "properties": {}
+        "properties": {
+          "qrCode": {
+            "type": "string",
+            "description": "Código SABS o identificador QR único del activo patrimonial (ej. ACT-2026-001 o QR-123)",
+            "example": "ACT-2026-001"
+          },
+          "name": {
+            "type": "string",
+            "description": "Descripción detallada, marca, modelo y serie del activo patrimonial",
+            "example": "Servidor Dell PowerEdge R740, 64GB RAM, 2TB SSD"
+          },
+          "status": {
+            "type": "string",
+            "description": "Estado inicial del bien patrimonial según normativa SABS (DISPONIBLE, ACTIVO, Nuevo, Asignado)",
+            "enum": [
+              "DISPONIBLE",
+              "ACTIVO",
+              "Nuevo",
+              "Asignado"
+            ],
+            "example": "DISPONIBLE"
+          },
+          "location": {
+            "type": "string",
+            "description": "Unidad administrativa, piso o almacén de ubicación física del activo",
+            "example": "Dirección de Tecnologías de Información - Rack Central"
+          },
+          "category": {
+            "type": "string",
+            "description": "Categoría patrimonial del bien (ej. Equipos de Computación, Vehículos, Mobiliario)",
+            "example": "Equipos de Computación"
+          },
+          "usefulLife": {
+            "type": "number",
+            "description": "Vida útil estimada en años",
+            "example": 5
+          },
+          "origin": {
+            "type": "string",
+            "description": "Origen de incorporación patrimonial (Compra, Donación, Transferencia)",
+            "example": "Compra"
+          },
+          "purchaseDate": {
+            "type": "string",
+            "description": "Fecha de adquisición del bien patrimonial en formato ISO 8601",
+            "example": "2026-01-15T00:00:00.000Z"
+          },
+          "entryDate": {
+            "type": "string",
+            "description": "Fecha de ingreso al almacén o unidad solicitante en formato ISO 8601",
+            "example": "2026-01-20T00:00:00.000Z"
+          },
+          "purchaseValue": {
+            "type": "number",
+            "description": "Valor histórico de adquisición en moneda del sistema ($us o Bs.)",
+            "example": 3500.5
+          },
+          "warrantyMonths": {
+            "type": "number",
+            "description": "Meses de garantía técnica otorgados por el fabricante/proveedor",
+            "example": 36
+          },
+          "providerName": {
+            "type": "string",
+            "description": "Razón social del proveedor adjudicado",
+            "example": "Dell Technologies Bolivia S.R.L."
+          },
+          "providerNit": {
+            "type": "string",
+            "description": "Número de Identificación Tributaria (NIT) del proveedor",
+            "example": "1029384756"
+          },
+          "providerPhone": {
+            "type": "string",
+            "description": "Teléfono o contacto del proveedor",
+            "example": "+591 4 4123456"
+          }
+        },
+        "required": [
+          "qrCode",
+          "name",
+          "status",
+          "location",
+          "category",
+          "origin",
+          "purchaseDate",
+          "entryDate",
+          "purchaseValue"
+        ]
+      },
+      "AssetStatusHistoryItemDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "assetId": {
+            "type": "string",
+            "example": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+          },
+          "previousStatus": {
+            "type": "string",
+            "example": "DISPONIBLE"
+          },
+          "newStatus": {
+            "type": "string",
+            "example": "EN_DIAGNOSTICO"
+          },
+          "reason": {
+            "type": "string",
+            "example": "Falla recurrente en fuente de poder"
+          },
+          "changedBy": {
+            "type": "string",
+            "example": "Lic. Josefina Rojas"
+          },
+          "changedAt": {
+            "format": "date-time",
+            "type": "string",
+            "example": "2026-11-16T20:00:00.000Z"
+          }
+        },
+        "required": [
+          "id",
+          "assetId",
+          "previousStatus",
+          "newStatus",
+          "changedAt"
+        ]
+      },
+      "AssetResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+          },
+          "qrCode": {
+            "type": "string",
+            "example": "ACT-2026-001"
+          },
+          "name": {
+            "type": "string",
+            "example": "Servidor Dell PowerEdge R740"
+          },
+          "status": {
+            "type": "string",
+            "example": "DISPONIBLE"
+          },
+          "location": {
+            "type": "string",
+            "example": "Data Center Central"
+          },
+          "category": {
+            "type": "string",
+            "example": "Equipos de Computación"
+          },
+          "origin": {
+            "type": "string",
+            "example": "Compra"
+          },
+          "purchaseDate": {
+            "format": "date-time",
+            "type": "string",
+            "example": "2026-01-15T00:00:00.000Z"
+          },
+          "entryDate": {
+            "format": "date-time",
+            "type": "string",
+            "example": "2026-01-20T00:00:00.000Z"
+          },
+          "purchaseValue": {
+            "type": "number",
+            "example": 3500.5
+          },
+          "usefulLife": {
+            "type": "number",
+            "example": 5
+          },
+          "warrantyMonths": {
+            "type": "number",
+            "example": 36
+          },
+          "providerName": {
+            "type": "string",
+            "example": "Dell Technologies"
+          },
+          "providerNit": {
+            "type": "string",
+            "example": "1029384756"
+          },
+          "providerPhone": {
+            "type": "string",
+            "example": "+591 4 4123456"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string",
+            "example": "2026-11-16T20:00:00.000Z"
+          },
+          "statusHistory": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AssetStatusHistoryItemDto"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "qrCode",
+          "name",
+          "status",
+          "location",
+          "category",
+          "origin",
+          "purchaseDate",
+          "entryDate",
+          "purchaseValue",
+          "updatedAt"
+        ]
+      },
+      "ChangeAssetStatusDto": {
+        "type": "object",
+        "properties": {
+          "nuevoEstado": {
+            "type": "string",
+            "description": "Nuevo estado patrimonial normativo a asignar (DISPONIBLE, ASIGNADO, EN_MANTENIMIENTO, EN_DIAGNOSTICO, APTO_PARA_BAJA, Dañado, Obsoleto, En_Proceso_Baja, Dado_De_Baja)",
+            "example": "EN_DIAGNOSTICO"
+          },
+          "motivo": {
+            "type": "string",
+            "description": "Motivo o justificación técnica y normativa del cambio de estado (mínimo 5 caracteres)",
+            "example": "Envío de activo a evaluación técnica especializada por falla en placa madre"
+          },
+          "responsable": {
+            "type": "string",
+            "description": "Nombre o identificador del usuario responsable de ordenar la transición",
+            "example": "Lic. Josefina Rojas - Responsable de Activos Fijos"
+          }
+        },
+        "required": [
+          "nuevoEstado",
+          "motivo"
+        ]
+      },
+      "CreateDiagnosticoDto": {
+        "type": "object",
+        "properties": {
+          "numeroInforme": {
+            "type": "string",
+            "description": "Número correlativo único del informe de diagnóstico técnico patrimonial",
+            "example": "INF-TEC-2026-0042"
+          },
+          "causalSabs": {
+            "type": "string",
+            "description": "Causal normativa SABS que fundamenta la evaluación (OBSOLESCENCIA, DETERIORO_IRREPARABLE, SINIESTRO, INCOMPATIBILIDAD_TECNICA, HURTO_O_ROBO)",
+            "enum": [
+              "OBSOLESCENCIA",
+              "DETERIORO_IRREPARABLE",
+              "SINIESTRO",
+              "INCOMPATIBILIDAD_TECNICA",
+              "HURTO_O_ROBO"
+            ],
+            "example": "OBSOLESCENCIA"
+          },
+          "diagnosticoDetalle": {
+            "type": "string",
+            "description": "Detalle técnico, hallazgos de peritaje y descripción del estado físico/lógico del bien",
+            "example": "El servidor presenta fallo irrecuperable en controladora RAID y procesadores descontinuados sin soporte."
+          },
+          "recomendacion": {
+            "type": "string",
+            "description": "Recomendación del informe pericial (RECOMENDAR_BAJA, REPARAR, REASIGNAR)",
+            "enum": [
+              "RECOMENDAR_BAJA",
+              "REPARAR",
+              "REASIGNAR"
+            ],
+            "example": "RECOMENDAR_BAJA"
+          },
+          "dictaminaBaja": {
+            "type": "boolean",
+            "description": "Indica si el informe dictamina formalmente la baja patrimonial del bien. Si es true, transiciona automáticamente el activo a APTO_PARA_BAJA.",
+            "example": true
+          },
+          "evidenciaDocumento": {
+            "type": "string",
+            "description": "URL, enlace o nombre de archivo de la evidencia documental o peritaje adjunto",
+            "example": "https://docs.activa360.gob.bo/informes/INF-TEC-2026-0042.pdf"
+          },
+          "costoEstimadoReparacion": {
+            "type": "number",
+            "description": "Costo estimado de reparación en moneda local (si fuera técnica o económicamente viable)",
+            "example": 0
+          },
+          "tecnicoId": {
+            "type": "string",
+            "description": "Identificador del técnico o perito responsable",
+            "example": "TEC-USR-882"
+          },
+          "tecnicoNombre": {
+            "type": "string",
+            "description": "Nombre completo y cargo del perito o profesional que suscribe el informe",
+            "example": "Ing. Carlos Meneses - Especialista en Infraestructura"
+          },
+          "observaciones": {
+            "type": "string",
+            "description": "Observaciones normativas o administrativas adicionales",
+            "example": "Se sugiere proceder de forma inmediata a la solicitud de baja patrimonial SABS."
+          }
+        },
+        "required": [
+          "numeroInforme",
+          "causalSabs",
+          "diagnosticoDetalle",
+          "recomendacion",
+          "dictaminaBaja"
+        ]
+      },
+      "DiagnosticoResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "numeroInforme": {
+            "type": "string",
+            "example": "INF-TEC-2026-0042"
+          },
+          "assetId": {
+            "type": "string",
+            "example": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+          },
+          "causalSabs": {
+            "type": "string",
+            "example": "OBSOLESCENCIA"
+          },
+          "diagnosticoDetalle": {
+            "type": "string",
+            "example": "Servidor con componentes descontinuados sin repuestos disponibles."
+          },
+          "recomendacion": {
+            "type": "string",
+            "example": "RECOMENDAR_BAJA"
+          },
+          "dictaminaBaja": {
+            "type": "boolean",
+            "example": true
+          },
+          "estado": {
+            "type": "string",
+            "example": "VIGENTE"
+          },
+          "fechaEmision": {
+            "format": "date-time",
+            "type": "string",
+            "example": "2026-11-16T20:00:00.000Z"
+          },
+          "tecnicoId": {
+            "type": "string",
+            "example": "TEC-USR-882"
+          },
+          "tecnicoNombre": {
+            "type": "string",
+            "example": "Ing. Carlos Meneses"
+          },
+          "evidenciaDocumento": {
+            "type": "string",
+            "example": "https://docs.activa360.gob.bo/informes/INF-0042.pdf"
+          },
+          "costoEstimadoReparacion": {
+            "type": "number",
+            "example": 0
+          },
+          "observaciones": {
+            "type": "string",
+            "example": "Apto para iniciar baja patrimonial SABS"
+          }
+        },
+        "required": [
+          "id",
+          "numeroInforme",
+          "assetId",
+          "causalSabs",
+          "diagnosticoDetalle",
+          "recomendacion",
+          "dictaminaBaja",
+          "estado",
+          "fechaEmision"
+        ]
       },
       "SubmitInspectionDto": {
         "type": "object",

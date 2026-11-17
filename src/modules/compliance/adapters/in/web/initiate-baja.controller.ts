@@ -46,7 +46,11 @@ export class InitiateBajaController {
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  @ApiOperation({ summary: 'Iniciar un nuevo trámite de baja SABS para un activo dañado u obsoleto' })
+  @ApiOperation({
+    summary: 'Iniciar un nuevo trámite de baja SABS para un activo dañado u obsoleto',
+    description:
+      'Inicia formalmente el trámite de baja patrimonial SABS, verificando que el bien patrimonial esté en estado Dañado, Obsoleto o APTO_PARA_BAJA, consumiendo el informe técnico vigente y actualizando su estado a En_Proceso_Baja.',
+  })
   @ApiResponse({ status: 201, description: 'Trámite de baja iniciado exitosamente', type: BajaItemResponseDto })
   @ApiResponse({ status: 400, description: 'Datos del trámite inválidos' })
   @ApiResponse({ status: 404, description: 'El activo no existe en el inventario' })
@@ -64,6 +68,8 @@ export class InitiateBajaController {
   @Get()
   @ApiOperation({
     summary: 'Listar trámites de bajas con filtros por estado, activo y rango de fechas, más paginación',
+    description:
+      'Obtiene el listado paginado de trámites de baja patrimoniales registrados con opciones de filtrado por estado, búsqueda de activo y rangos de fechas.',
   })
   @ApiResponse({
     status: 200,
@@ -78,7 +84,11 @@ export class InitiateBajaController {
 
   @Post(':id/aprobar')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Aprobar trámite de baja y retirar el activo de los inventarios' })
+  @ApiOperation({
+    summary: 'Aprobar trámite de baja y retirar el activo de los inventarios',
+    description:
+      'Dictamina la aprobación definitiva del trámite de baja SABS, actualizando el estado de la baja a APROBADA y retirando el bien patrimonial al estado terminal Dado_De_Baja.',
+  })
   @ApiParam({ name: 'id', description: 'ID único del trámite de baja' })
   @ApiResponse({ status: 200, description: 'Baja aprobada exitosamente y activo retirado' })
   @ApiResponse({ status: 404, description: 'Trámite de baja no encontrado' })
@@ -100,6 +110,19 @@ export class InitiateBajaController {
       data: { status: 'Dado_De_Baja' },
     });
 
+    try {
+      await this.prisma.assetStatusHistory.create({
+        data: {
+          assetId: baja.assetId,
+          previousStatus: 'En_Proceso_Baja',
+          newStatus: 'Dado_De_Baja',
+          reason: 'Aprobación definitiva de baja patrimonial SABS y retiro de inventarios',
+          changedBy: 'MAE / Jefatura',
+          changedAt: new Date(),
+        },
+      });
+    } catch {}
+
     return {
       success: true,
       message: 'Baja aprobada y activo retirado de inventarios',
@@ -108,7 +131,11 @@ export class InitiateBajaController {
 
   @Post(':id/rechazar')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Rechazar trámite de baja registrando el motivo obligatorio de rechazo' })
+  @ApiOperation({
+    summary: 'Rechazar trámite de baja registrando el motivo obligatorio de rechazo',
+    description:
+      'Rechaza de forma fundamentada un trámite de baja patrimonial en estado INICIADA, actualizando a RECHAZADA, registrando el motivo obligatorio y ejecutando la restauración condicional del diagnóstico técnico y del estado del bien patrimonial.',
+  })
   @ApiParam({ name: 'id', description: 'ID único del trámite de baja a rechazar' })
   @ApiResponse({ status: 200, description: 'Baja rechazada exitosamente con motivo registrado', type: BajaItemResponseDto })
   @ApiResponse({ status: 400, description: 'Motivo de rechazo inválido o la baja no se encuentra en estado INICIADA' })

@@ -1,11 +1,18 @@
 import { Controller, Get, Query } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { PrismaService } from '../../../../compliance/adapters/out/db/prisma.service.js';
 
+@ApiTags('reportes')
 @Controller('activos/reportes')
 export class ReportsStatsController {
   constructor(private readonly prisma: PrismaService) {}
 
   @Get('estadisticas')
+  @ApiOperation({
+    summary: 'Obtener métricas y estadísticas consolidadas',
+    description: 'Calcula indicadores agregados de activos por ubicación, estado y depreciación mensual.',
+  })
+  @ApiResponse({ status: 200, description: 'Estadísticas agregadas calculadas exitosamente' })
   async getStats(
     @Query('startDate') startDate?: string,
     @Query('endDate') endDate?: string,
@@ -86,6 +93,11 @@ export class ReportsStatsController {
   }
 
   @Get('depreciacion')
+  @ApiOperation({
+    summary: 'Reporte de depreciación acumulada de activos',
+    description: 'Genera el reporte de valor actual y depreciación anual acumulada según vida útil.',
+  })
+  @ApiResponse({ status: 200, description: 'Cálculo de depreciación obtenido' })
   async getDepreciacion(
     @Query('startDate') startDate?: string,
     @Query('endDate') endDate?: string,
@@ -136,6 +148,11 @@ export class ReportsStatsController {
   }
 
   @Get('inventario')
+  @ApiOperation({
+    summary: 'Reporte de inventario físico',
+    description: 'Genera el listado consolidado de inventario para fines de auditoría.',
+  })
+  @ApiResponse({ status: 200, description: 'Reporte de inventario obtenido' })
   async getInventario(
     @Query('startDate') startDate?: string,
     @Query('endDate') endDate?: string,
@@ -162,6 +179,11 @@ export class ReportsStatsController {
   }
 
   @Get('valoracion')
+  @ApiOperation({
+    summary: 'Reporte de valoración patrimonial',
+    description: 'Genera el balance global de valoración patrimonial e inversión en activos.',
+  })
+  @ApiResponse({ status: 200, description: 'Reporte de valoración patrimonial obtenido' })
   async getValoracion(
     @Query('startDate') startDate?: string,
     @Query('endDate') endDate?: string,
@@ -225,6 +247,11 @@ export class ReportsStatsController {
   }
 
   @Get('mantenimiento')
+  @ApiOperation({
+    summary: 'Reporte de mantenimientos e inspecciones',
+    description: 'Genera el historial de informes técnicos y costos de mantenimiento.',
+  })
+  @ApiResponse({ status: 200, description: 'Reporte de mantenimiento obtenido' })
   async getMantenimiento(
     @Query('startDate') startDate?: string,
     @Query('endDate') endDate?: string,
@@ -263,6 +290,11 @@ export class ReportsStatsController {
   }
 
   @Get('bajas')
+  @ApiOperation({
+    summary: 'Reporte consolidado de bajas patrimoniales',
+    description: 'Genera el historial de trámites de baja iniciados, aprobados o rechazados.',
+  })
+  @ApiResponse({ status: 200, description: 'Reporte de bajas obtenido' })
   async getBajas(
     @Query('startDate') startDate?: string,
     @Query('endDate') endDate?: string,
@@ -312,6 +344,11 @@ export class ReportsStatsController {
   }
 
   @Get('transferencias')
+  @ApiOperation({
+    summary: 'Reporte de transferencias patrimoniales',
+    description: 'Genera el historial de movimientos de traspaso de activos entre unidades.',
+  })
+  @ApiResponse({ status: 200, description: 'Reporte de transferencias obtenido' })
   async getTransferencias(
     @Query('startDate') startDate?: string,
     @Query('endDate') endDate?: string,
@@ -358,6 +395,11 @@ export class ReportsStatsController {
   }
 
   @Get('alertas-notificaciones')
+  @ApiOperation({
+    summary: 'Reporte de alertas y notificaciones del sistema',
+    description: 'Genera el consolidado de alertas patrimoniales, activos pendientes de inspección y garantías por vencer.',
+  })
+  @ApiResponse({ status: 200, description: 'Alertas y notificaciones obtenidas' })
   async getAlertasNotificaciones() {
     const alerts = [];
 

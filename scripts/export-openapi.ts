@@ -18,12 +18,18 @@ async function exportOpenApi() {
   const config = new DocumentBuilder()
     .setTitle('Activa360 API')
     .setDescription(
-      'API de gestión de activos fijos — Inventario QR, Transferencias y Bajas SABS',
+      'API de gestión de activos fijos — Inventario QR, Transferencias, Control de Estados Patrimoniales, Diagnósticos Técnicos y Bajas SABS',
     )
     .setVersion('8.2.0')
-    .addTag('inventario', 'Escaneo QR y registro de inventario por campaña')
-    .addTag('activos', 'Registro, asignación y transferencia de activos')
+    .addServer('http://localhost:3000', 'Servidor local de desarrollo')
+    .addTag('activos', 'Registro, administración, consulta y transición de estados patrimoniales SABS')
+    .addTag('diagnosticos', 'Emisión, consulta y restauración de informes técnicos previos a bajas SABS')
     .addTag('compliance', 'Bajas SABS y flujos de cumplimiento normativo')
+    .addTag('inventario', 'Escaneo QR y registro de inventario por campaña')
+    .addTag('reportes', 'Estadísticas, depreciación, inventario y valoración patrimonial')
+    .addTag('usuarios', 'Gestión de usuarios y personal del sistema')
+    .addTag('asistente', 'Consultas en lenguaje natural y asistencia inteligente con protocolo MCP')
+    .addTag('app', 'Endpoints base y salud del sistema')
     .addBearerAuth()
     .build();
 

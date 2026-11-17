@@ -64,6 +64,32 @@ export class InMemoryAssetRepository implements AssetRepositoryPort {
     return Array.from(this.assets.values());
   }
 
+  async findByIdWithHistory(id: string): Promise<Asset | null> {
+    return this.findById(id);
+  }
+
+  async findAllWithFilters(filters: {
+    estado?: string;
+    codigo?: string;
+    unidad?: string;
+  }): Promise<Asset[]> {
+    let list = Array.from(this.assets.values());
+    if (filters.estado) {
+      list = list.filter((a) => a.status.toLowerCase() === filters.estado!.toLowerCase());
+    }
+    if (filters.codigo) {
+      list = list.filter((a) => a.qrCode.toLowerCase().includes(filters.codigo!.toLowerCase()));
+    }
+    if (filters.unidad) {
+      list = list.filter((a) => a.location.toLowerCase().includes(filters.unidad!.toLowerCase()));
+    }
+    return list;
+  }
+
+  async recordStatusChange(history: any): Promise<any> {
+    return history;
+  }
+
   async saveMaintenanceReport(report: {
     assetId: string;
     diagnosis: string;
